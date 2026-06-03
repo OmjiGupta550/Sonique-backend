@@ -60,7 +60,6 @@ def match_video_for_song(song_info):
 
 # Cobalt fallback stream resolver
 COBALT_INSTANCES = [
-    'https://dog.kittycat.boo',
     'https://fox.kittycat.boo',
     'https://cobaltapi.kittycat.boo'
 ]

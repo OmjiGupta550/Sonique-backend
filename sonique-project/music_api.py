@@ -66,9 +66,10 @@ COBALT_INSTANCES = [
 
 def get_cobalt_fallback(video_id, download_mode="audio"):
     yt_url = f"https://www.youtube.com/watch?v={video_id}"
+    cobalt_mode = "auto" if download_mode == "video" else download_mode
     payload = {
         "url": yt_url,
-        "downloadMode": download_mode,
+        "downloadMode": cobalt_mode,
         "filenameStyle": "basic"
     }
     if download_mode == "audio":
@@ -363,7 +364,7 @@ def get_vibe_tracks(video_id):
                                         duration_secs = parts[0] * 60 + parts[1]
                                     elif len(parts) == 3:
                                         duration_secs = parts[0] * 3600 + parts[1] * 60 + parts[2]
-                                 except:
+                                except:
                                     pass
                                     
                             artists_list = track.get('artists', [])
