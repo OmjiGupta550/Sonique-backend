@@ -58,6 +58,43 @@ def match_video_for_song(song_info):
         print(f"Error matching song {title} to video: {e}")
     return None
 
+# Cobalt fallback stream resolver
+COBALT_INSTANCES = [
+    'https://dog.kittycat.boo',
+    'https://fox.kittycat.boo',
+    'https://cobaltapi.kittycat.boo'
+]
+
+def get_cobalt_fallback(video_id, download_mode="audio"):
+    yt_url = f"https://www.youtube.com/watch?v={video_id}"
+    cobalt_mode = "auto" if download_mode == "video" else download_mode
+    payload = {
+        "url": yt_url,
+        "downloadMode": cobalt_mode,
+        "filenameStyle": "basic"
+    }
+    if download_mode == "audio":
+        payload["audioFormat"] = "mp3"
+        payload["audioBitrate"] = "128"
+    else:
+        payload["videoQuality"] = "720"
+        
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+    }
+    
+    for instance in COBALT_INSTANCES:
+        try:
+            res = requests.post(instance, json=payload, headers=headers, timeout=8)
+            if res.status_code == 200:
+                data = res.json()
+                if data.get("status") in ["tunnel", "redirect"]:
+                    return data.get("url")
+        except Exception as e:
+            print(f"Cobalt fallback failed for {instance}: {e}")
+    return None
+
 # Piped fallback stream resolver
 def get_piped_fallback(video_id):
     piped_instances = [
@@ -208,6 +245,11 @@ def get_stream(video_id):
     except Exception as e:
         print(f"Local yt-dlp extraction failed for {video_id}: {e}. Trying fallbacks...")
         
+    # Attempt 1.5: Try Cobalt fallback
+    if not stream_url:
+        print(f"Attempting Cobalt fallback for {video_id}...")
+        stream_url = get_cobalt_fallback(video_id, "audio")
+
     # Attempt 2: Try Piped fallback
     if not stream_url:
         print(f"Attempting Piped fallback for {video_id}...")
@@ -573,8 +615,14 @@ def get_video_stream_hd(video_id):
                 if video_url:
                     video_stream_cache[video_id] = (video_url, audio_url, now + 2700)
         except Exception as e:
-            print(f"Direct HD stream extraction failed for {video_id}: {e}")
-            return jsonify({'error': str(e)}), 500
+            print(f"Direct HD stream extraction failed for {video_id}: {e}. Trying fallbacks...")
+
+    if not video_url:
+        print(f"Attempting Cobalt video fallback for {video_id}...")
+        video_url = get_cobalt_fallback(video_id, "video")
+        audio_url = None
+        if video_url:
+            video_stream_cache[video_id] = (video_url, audio_url, now + 2700)
 
     if not video_url:
         return jsonify({'error': 'Failed to resolve video stream URLs'}), 500
@@ -582,6 +630,9 @@ def get_video_stream_hd(video_id):
     ffmpeg_bin = imageio_ffmpeg.get_ffmpeg_exe()
     
     cmd = [ffmpeg_bin]
+    
+    # Add User-Agent to bypass bot detection on Cobalt/CDNs
+    cmd += ['-user_agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36']
     
     # Add input seeking if start parameter is specified
     if start_secs > 0:
@@ -593,6 +644,7 @@ def get_video_stream_hd(video_id):
     if audio_url:
         if start_secs > 0:
             cmd += ['-ss', f"{start_secs:.3f}"]
+        cmd += ['-user_agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36']
         cmd += ['-i', audio_url]
         
     if audio_url:
@@ -605,6 +657,7 @@ def get_video_stream_hd(video_id):
     else:
         cmd += [
             '-c:v', 'copy',
+            '-c:a', 'copy',
         ]
         
     cmd += [
