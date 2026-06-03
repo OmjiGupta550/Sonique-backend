@@ -288,7 +288,7 @@ def get_vibe_tracks(video_id):
                     'artist': artist_name,
                     'coverUrl': thumbnail,
                     'duration': duration_secs,
-                    'sourceUrl': f"http://localhost:5000/api/stream/{vid}?redirect=true",
+                    'sourceUrl': f"{request.host_url}api/stream/{vid}?redirect=true",
                     'hasVideo': has_video
                 })
                 
@@ -335,7 +335,7 @@ def get_vibe_tracks(video_id):
                                 'artist': artist_name,
                                 'coverUrl': thumbnail,
                                 'duration': duration_secs,
-                                'sourceUrl': f"http://localhost:5000/api/stream/{vid}?redirect=true",
+                                'sourceUrl': f"{request.host_url}api/stream/{vid}?redirect=true",
                                 'hasVideo': True if video_only else (track.get('videoType', '') in ['MUSIC_VIDEO_TYPE_OMV', 'MUSIC_VIDEO_TYPE_UGC'])
                             })
                             if len(songs) >= 55:
@@ -644,7 +644,7 @@ def get_video_stream(video_id):
     # Resolve Art Track videoId to matched Official Music Video ID
     video_id = song_to_video_map.get(video_id, video_id)
     # Simply redirect or return the URL of our custom HD streaming route
-    hd_url = f"http://localhost:5000/api/stream/video/hd/{video_id}"
+    hd_url = f"{request.host_url}api/stream/video/hd/{video_id}"
     if request.args.get('redirect', '') == 'true':
         return redirect(hd_url, code=302)
     return jsonify({
