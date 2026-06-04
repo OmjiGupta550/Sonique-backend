@@ -211,7 +211,7 @@ class YouTubeAudioElement {
 
     // Extract videoId from standard URL, Piped streams or direct ID
     let vidId = val;
-    const streamMatch = val.match(/\/stream\/([a-zA-Z0-9_-]{11})/);
+    const streamMatch = val.match(/\/stream\/(?:video\/)?([a-zA-Z0-9_-]{11})/);
     if (streamMatch) {
       vidId = streamMatch[1];
       logMsg(`Matched stream pattern video ID: ${vidId}`);
