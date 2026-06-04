@@ -122,45 +122,30 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         const style = window.getComputedStyle(placeholder);
         container.style.borderRadius = style.borderRadius || "8px";
 
-        // Throttled debug log (once per second)
-        if (typeof window !== "undefined") {
-          (window as any).syncLogCounter = ((window as any).syncLogCounter || 0) + 1;
-          if ((window as any).syncLogCounter % 60 === 0) {
-            console.log("[Sync Debug] Placeholder rect:", {
-              width: rect.width,
-              height: rect.height,
-              top: rect.top,
-              left: rect.left
-            }, "Container style:", {
-              width: container.style.width,
-              height: container.style.height,
-              top: container.style.top,
-              left: container.style.left,
-              zIndex: container.style.zIndex,
-              opacity: container.style.opacity,
-              pointerEvents: container.style.pointerEvents
-            });
-          }
-        }
+        // Bypass browser cross-origin minimum size (200x200px) rendering constraint by scaling the iframe inside the container viewport
+        const iframe = container.querySelector("iframe") || container.firstElementChild as HTMLElement;
+        if (iframe) {
+          if (rect.width < 200 || rect.height < 200) {
+            // Apply scale-down matrix to bypass minimum 200x200px rendering constraint
+            const baseSize = 200;
+            const scale = rect.width / baseSize;
+            const scaledHeight = baseSize * scale;
+            const offsetTop = -((scaledHeight - rect.height) / 2);
 
-        // Throttled debug log (once per second)
-        if (typeof window !== "undefined") {
-          (window as any).syncLogCounter = ((window as any).syncLogCounter || 0) + 1;
-          if ((window as any).syncLogCounter % 60 === 0) {
-            console.log("[Sync Debug] Placeholder rect:", {
-              width: rect.width,
-              height: rect.height,
-              top: rect.top,
-              left: rect.left
-            }, "Container style:", {
-              width: container.style.width,
-              height: container.style.height,
-              top: container.style.top,
-              left: container.style.left,
-              zIndex: container.style.zIndex,
-              opacity: container.style.opacity,
-              pointerEvents: container.style.pointerEvents
-            });
+            iframe.style.setProperty("width", `${baseSize}px`, "important");
+            iframe.style.setProperty("height", `${baseSize}px`, "important");
+            iframe.style.setProperty("transform", `scale(${scale})`, "important");
+            iframe.style.setProperty("transform-origin", "top left", "important");
+            iframe.style.setProperty("margin-top", `${offsetTop}px`, "important");
+            iframe.style.setProperty("margin-left", "0px", "important");
+          } else {
+            // Restore standard fullscreen / modal size
+            iframe.style.setProperty("width", "100%", "important");
+            iframe.style.setProperty("height", "100%", "important");
+            iframe.style.setProperty("transform", "none", "important");
+            iframe.style.setProperty("transform-origin", "top left", "important");
+            iframe.style.setProperty("margin-top", "0px", "important");
+            iframe.style.setProperty("margin-left", "0px", "important");
           }
         }
       } else {
@@ -175,6 +160,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         container.style.pointerEvents = "none";
         container.style.zIndex = "-9999";
         container.style.borderRadius = "8px";
+
+        const iframe = container.querySelector("iframe") || container.firstElementChild as HTMLElement;
+        if (iframe) {
+          iframe.style.setProperty("width", "100%", "important");
+          iframe.style.setProperty("height", "100%", "important");
+          iframe.style.setProperty("transform", "none", "important");
+          iframe.style.setProperty("margin-top", "0px", "important");
+          iframe.style.setProperty("margin-left", "0px", "important");
+        }
       }
 
       requestAnimationFrame(syncPlayerPosition);
