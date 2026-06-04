@@ -17,7 +17,6 @@ import { Music, Disc, Play, Pause, Maximize2 } from 'lucide-react';
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { loadUserData, setProfile, isLoadingData, accentColor, activeVideoId, playVideo } = useUIStore();
   const { sleepTimerActive, decrementSleepTimer, initAudio, showFullscreenPlayer, setShowFullscreenPlayer, togglePlay, isPlaying, queue, shuffledQueue, isShuffle, currentIndex } = usePlayerStore();
-  const [hoverRect, setHoverRect] = useState<DOMRect | null>(null);
 
   // Initialize keyboard shortcuts
   useKeyboard();
@@ -116,11 +115,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         container.style.opacity = "1";
         container.style.pointerEvents = "none";
         
-        // Set to z-48 when overlays are active (above z-45 backgrounds, under z-50 panels)
-        // Set to z-59 when overlays are active (above z-58 backgrounds, under z-60 panels)
-        // Set to z-100 when minimized (shows on top of mini-player z-40 bar)
-        const isOverlayActive = activeVideoId !== null || showFullscreenPlayer;
-        container.style.zIndex = isOverlayActive ? "59" : "100";
+        // Always set to z-59 so the video player frame is sandwiched between z-58 backgrounds and z-60 controls layout
+        container.style.zIndex = "59";
         
         // Inherit border radius from placeholder if possible
         const style = window.getComputedStyle(placeholder);
@@ -147,11 +143,25 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           }
         }
 
-        // Save rect for the root-level hover overlay when in mini player mode
-        if (!isOverlayActive) {
-          setHoverRect(rect);
-        } else {
-          setHoverRect(null);
+        // Throttled debug log (once per second)
+        if (typeof window !== "undefined") {
+          (window as any).syncLogCounter = ((window as any).syncLogCounter || 0) + 1;
+          if ((window as any).syncLogCounter % 60 === 0) {
+            console.log("[Sync Debug] Placeholder rect:", {
+              width: rect.width,
+              height: rect.height,
+              top: rect.top,
+              left: rect.left
+            }, "Container style:", {
+              width: container.style.width,
+              height: container.style.height,
+              top: container.style.top,
+              left: container.style.left,
+              zIndex: container.style.zIndex,
+              opacity: container.style.opacity,
+              pointerEvents: container.style.pointerEvents
+            });
+          }
         }
       } else {
         // Place off-screen and hide
@@ -165,7 +175,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         container.style.pointerEvents = "none";
         container.style.zIndex = "-9999";
         container.style.borderRadius = "8px";
-        setHoverRect(null);
       }
 
       requestAnimationFrame(syncPlayerPosition);
@@ -249,39 +258,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       >
         <div id="hidden-youtube-player-iframe" style={{ width: "100%", height: "100%" }} />
       </div>
-
-
-      {/* Root-Level MiniPlayer Hover Overlay for the Video Corner Preview */}
-      {hoverRect && activeVideoId === null && !showFullscreenPlayer && (
-        <div 
-          className="fixed z-[105] bg-transparent opacity-0 hover:opacity-100 transition-opacity duration-200 flex items-center justify-center cursor-pointer rounded-lg group pointer-events-auto"
-          style={{
-            width: `${hoverRect.width}px`,
-            height: `${hoverRect.height}px`,
-            top: `${hoverRect.top}px`,
-            left: `${hoverRect.left}px`,
-          }}
-          onClick={togglePlay}
-          title={isPlaying ? "Pause" : "Play"}
-        >
-          {isPlaying ? (
-            <Pause className="w-6 h-6 text-white drop-shadow-md" />
-          ) : (
-            <Play className="w-6 h-6 text-white translate-x-0.5 drop-shadow-md" />
-          )}
-
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowFullscreenPlayer(true);
-            }}
-            className="absolute top-1 right-1 p-1 rounded bg-black/60 hover:bg-black text-white/80 hover:text-white transition opacity-0 group-hover:opacity-100"
-            title="Open Fullscreen"
-          >
-            <Maximize2 className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
     </div>
   );
 }
