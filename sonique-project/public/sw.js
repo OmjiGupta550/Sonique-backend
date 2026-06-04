@@ -1,5 +1,5 @@
 // Beatwave Custom Service Worker for Offline / PWA capabilities
-const CACHE_NAME = 'beatwave-v1';
+const CACHE_NAME = 'beatwave-v2'; // Incremented to purge old cache v1 and trigger clean reload
 const ASSETS_TO_CACHE = [
   '/',
   '/favicon.ico',
@@ -21,6 +21,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cache) => {
           if (cache !== CACHE_NAME && cache !== 'beatwave-audio-cache') {
+            console.log('Purging old service worker cache:', cache);
             return caches.delete(cache);
           }
         })
@@ -39,7 +40,39 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Handle audio and metadata caching
+  const isNextAsset = url.pathname.startsWith('/_next/');
+  const isNavigation = event.request.mode === 'navigate';
+
+  // Network-First for HTML navigation and Next.js JS/CSS bundles to ensure instant live updates when online
+  if (isNavigation || isNextAsset) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response.status === 200) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseClone);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          return caches.match(event.request).then((cached) => {
+            if (cached) return cached;
+            if (isNavigation) {
+              return caches.match('/');
+            }
+            return new Response('Offline content not available', {
+              status: 503,
+              statusText: 'Service Unavailable',
+            });
+          });
+        })
+    );
+    return;
+  }
+
+  // Cache-First for other assets (fonts, static files, images)
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
@@ -50,8 +83,7 @@ self.addEventListener('fetch', (event) => {
         // Cache static assets and fonts
         if (
           response.status === 200 &&
-          (url.pathname.startsWith('/_next/') ||
-            url.pathname.includes('/fonts/') ||
+          (url.pathname.includes('/fonts/') ||
             url.hostname.includes('fonts.gstatic.com') ||
             url.hostname.includes('fonts.googleapis.com'))
         ) {
@@ -61,15 +93,6 @@ self.addEventListener('fetch', (event) => {
           });
         }
         return response;
-      }).catch(() => {
-        // Fallback for offline page loading
-        if (event.request.mode === 'navigate') {
-          return caches.match('/');
-        }
-        return new Response('Offline content not available', {
-          status: 503,
-          statusText: 'Service Unavailable',
-        });
       });
     })
   );
