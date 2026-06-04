@@ -301,8 +301,8 @@ export function FullscreenPlayer() {
 
           </div>
 
-          {/* Right Panel: Sliding Lyrics or Queue content (Hidden on mobile when in Player mode) - shrink-0 locked to protect scale */}
-          <div className={`flex-1 w-full h-full overflow-hidden flex flex-col justify-center transition-all duration-300 pt-4 shrink-0 ${activeTab === 'player' ? 'hidden md:flex' : 'flex'}`}>
+          {/* Right Panel: Sliding Lyrics or Queue content (Hidden on mobile when in Player mode) */}
+          <div className={`flex-1 min-w-0 h-full overflow-hidden flex flex-col justify-center transition-all duration-300 pt-4 ${activeTab === 'player' ? 'hidden md:flex' : 'flex'}`}>
             
             {activeTab === 'queue' ? (
               <div className="h-full overflow-y-auto overscroll-contain pr-2 queue-scrollbar py-4 flex flex-col gap-2">

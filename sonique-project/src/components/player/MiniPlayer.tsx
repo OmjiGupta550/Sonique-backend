@@ -81,43 +81,22 @@ export function MiniPlayer() {
       </div>
 
       <div className="flex-1 flex items-center justify-between px-4 md:px-6">
-        {/* Left: Metadata */}
         <div className="flex items-center gap-3 w-1/3 min-w-[150px]">
-          {isVideoMode ? (
-            /* Widescreen YouTube Video Corner Preview Anchor */
-            <div 
-              className="w-24 h-14 rounded-lg bg-zinc-950 overflow-hidden shrink-0 relative border border-white/10 shadow-md group"
-            >
-              {activeVideoId === null && !showFullscreenPlayer ? (
-                <div 
-                  id="youtube-player-placeholder"
-                  className="w-full h-full rounded-lg bg-transparent"
-                />
-              ) : (
-                <img 
-                  src={coverSrc} 
-                  alt={activePlaybackTrack.title} 
-                  className="w-full h-full object-cover"
-                />
-              )}
-            </div>
-          ) : (
-            /* Standard Square Album Art Cover image */
-            <div 
-              className="w-14 h-14 rounded-lg bg-zinc-800 overflow-hidden shrink-0 cursor-pointer relative group border border-white/5 shadow-md"
-              onClick={() => setShowFullscreenPlayer(true)}
-            >
-              <img 
-                src={coverSrc} 
-                alt={activePlaybackTrack.title} 
-                className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = fallbackCover;
-                }}
-              />
-            </div>
-          )}
+          {/* Standard Square Album Art Cover image */}
+          <div 
+            className="w-14 h-14 rounded-lg bg-zinc-800 overflow-hidden shrink-0 cursor-pointer relative group border border-white/5 shadow-md"
+            onClick={() => setShowFullscreenPlayer(true)}
+          >
+            <img 
+              src={coverSrc} 
+              alt={activePlaybackTrack.title} 
+              className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = fallbackCover;
+              }}
+            />
+          </div>
           
           <div className="overflow-hidden">
             <h4 

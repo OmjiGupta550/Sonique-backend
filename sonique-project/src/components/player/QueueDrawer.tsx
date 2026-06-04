@@ -22,12 +22,12 @@ export function QueueDrawer() {
     showFullscreenPlayer
   } = usePlayerStore();
 
-  const { accentColor } = useUIStore();
+  const { accentColor, activeVideoId } = useUIStore();
 
   const activeQueue = isShuffle ? shuffledQueue : queue;
   const currentTrack = activeQueue[currentIndex];
 
-  if (!showQueueList || showFullscreenPlayer) return null;
+  if (!showQueueList || showFullscreenPlayer || activeVideoId !== null) return null;
 
   const handleTrackClick = (track: PlayerTrack, idx: number) => {
     // Jump to the clicked track in the current queue list, preserving video mode context
