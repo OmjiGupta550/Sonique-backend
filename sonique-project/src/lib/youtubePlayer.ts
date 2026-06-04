@@ -38,7 +38,7 @@ class YouTubeAudioElement {
       // Absolute positioning offscreen, hidden by default unless transitioned by layout engine
       container.setAttribute(
         "style",
-        "position: fixed; width: 200px; height: 200px; bottom: -500px; right: -500px; opacity: 0; pointer-events: none; z-index: -9999; border-radius: 8px; overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);"
+        "position: fixed; width: 200px; height: 200px; top: -1000px; left: -1000px; opacity: 0; pointer-events: none; z-index: -9999; border-radius: 8px; overflow: hidden; transition: opacity 0.3s ease, transform 0.3s ease;"
       );
       
       const iframePlaceholder = document.createElement("div");

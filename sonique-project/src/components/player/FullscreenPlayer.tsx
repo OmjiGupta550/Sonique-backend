@@ -92,12 +92,12 @@ export function FullscreenPlayer() {
 
   return (
     <AnimatePresence>
-      {/* Widescreen Background Panel (z-[45]) */}
+      {/* Widescreen Background Panel (z-[58]) */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[45] bg-zinc-950 overflow-hidden pointer-events-none"
+        className="fixed inset-0 z-[58] bg-zinc-950 overflow-hidden pointer-events-none"
       >
         <div 
           className="absolute inset-0 opacity-40 blur-[120px] pointer-events-none transition-all duration-1000 select-none scale-110"
@@ -107,13 +107,13 @@ export function FullscreenPlayer() {
         />
       </motion.div>
 
-      {/* Content Panel (z-50) */}
+      {/* Content Panel (z-[60]) */}
       <motion.div
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 25, stiffness: 120 }}
-        className="fixed inset-0 z-50 flex flex-col overflow-hidden text-white pointer-events-none"
+        className="fixed inset-0 z-[60] flex flex-col overflow-hidden text-white pointer-events-none"
       >
         {/* Top Header */}
         <header className="h-16 sticky top-0 flex items-center justify-between px-6 z-20 border-b border-white/5 bg-zinc-950 transform-gpu pointer-events-auto">

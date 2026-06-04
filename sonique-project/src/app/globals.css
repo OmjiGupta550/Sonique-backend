@@ -135,8 +135,13 @@ input[type="range"]::-moz-range-track {
 }
 
 /* Global YouTube positioned player iframe styles */
+#hidden-youtube-player-container {
+  background: transparent !important;
+}
+
 #hidden-youtube-player-container iframe {
   width: 100% !important;
   height: 100% !important;
   border: none !important;
+  background: transparent !important;
 }

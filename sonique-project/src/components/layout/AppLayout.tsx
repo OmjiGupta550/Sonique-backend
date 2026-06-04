@@ -117,9 +117,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         container.style.pointerEvents = "none";
         
         // Set to z-48 when overlays are active (above z-45 backgrounds, under z-50 panels)
-        // Set to z-100 when minimized (shows on top of mini-player z-40 bar)
+        // Set to z-59 when overlays are active (above z-58 backgrounds, under z-60 panels)
+        // Set to z-57 when minimized (shows on top of mini-player z-[55] bar)
         const isOverlayActive = activeVideoId !== null || showFullscreenPlayer;
-        container.style.zIndex = isOverlayActive ? "48" : "100";
+        container.style.zIndex = isOverlayActive ? "59" : "57";
         
         // Inherit border radius from placeholder if possible
         const style = window.getComputedStyle(placeholder);
@@ -135,10 +136,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         // Place off-screen and hide
         container.style.width = "200px";
         container.style.height = "200px";
-        container.style.top = "";
-        container.style.left = "";
-        container.style.bottom = "-500px";
-        container.style.right = "-500px";
+        container.style.top = "-1000px";
+        container.style.left = "-1000px";
+        container.style.bottom = "";
+        container.style.right = "";
         container.style.opacity = "0";
         container.style.pointerEvents = "none";
         container.style.zIndex = "-9999";
@@ -210,7 +211,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Root-Level MiniPlayer Hover Overlay for the Video Corner Preview */}
       {hoverRect && activeVideoId === null && !showFullscreenPlayer && (
         <div 
-          className="fixed z-[105] bg-transparent opacity-0 hover:opacity-100 transition-opacity duration-200 flex items-center justify-center cursor-pointer rounded-lg group pointer-events-auto"
+          className="fixed z-[59] bg-transparent opacity-0 hover:opacity-100 transition-opacity duration-200 flex items-center justify-center cursor-pointer rounded-lg group pointer-events-auto"
           style={{
             width: `${hoverRect.width}px`,
             height: `${hoverRect.height}px`,
