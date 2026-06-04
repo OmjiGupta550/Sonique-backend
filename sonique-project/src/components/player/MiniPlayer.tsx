@@ -99,6 +99,11 @@ export function MiniPlayer() {
                   className="w-full h-full object-cover"
                 />
               )}
+
+              {/* DEBUG INFO */}
+              <div className="absolute bottom-1 left-1 bg-black/80 text-[8px] font-semibold text-white px-1 py-0.5 rounded pointer-events-none select-none z-10">
+                VideoMode: {isVideoMode ? "ON" : "OFF"} | activeVideoId: {activeVideoId || "null"}
+              </div>
             </div>
           ) : (
             /* Standard Square Album Art Cover image */
