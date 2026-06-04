@@ -12,11 +12,12 @@ import { useUIStore } from '../../store/useUIStore';
 import { usePlayerStore } from '../../store/usePlayerStore';
 import { useKeyboard } from '../../hooks/useKeyboard';
 import { supabase } from '../../lib/supabase';
-import { Music, Disc } from 'lucide-react';
+import { Music, Disc, Play, Pause, Maximize2 } from 'lucide-react';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { loadUserData, setProfile, isLoadingData, accentColor, activeVideoId, playVideo } = useUIStore();
-  const { sleepTimerActive, decrementSleepTimer, initAudio, showFullscreenPlayer } = usePlayerStore();
+  const { sleepTimerActive, decrementSleepTimer, initAudio, showFullscreenPlayer, setShowFullscreenPlayer, togglePlay, isPlaying, queue, shuffledQueue, isShuffle, currentIndex } = usePlayerStore();
+  const [hoverRect, setHoverRect] = useState<DOMRect | null>(null);
 
   // Initialize keyboard shortcuts
   useKeyboard();
@@ -116,13 +117,20 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         container.style.pointerEvents = "none";
         
         // Set to z-48 when overlays are active (above z-45 backgrounds, under z-50 panels)
-        // Set to z-100 when minimized (but since there is no placeholder in miniplayer, it goes to off-screen z--9999)
+        // Set to z-100 when minimized (shows on top of mini-player z-40 bar)
         const isOverlayActive = activeVideoId !== null || showFullscreenPlayer;
         container.style.zIndex = isOverlayActive ? "48" : "100";
         
         // Inherit border radius from placeholder if possible
         const style = window.getComputedStyle(placeholder);
         container.style.borderRadius = style.borderRadius || "8px";
+
+        // Save rect for the root-level hover overlay when in mini player mode
+        if (!isOverlayActive) {
+          setHoverRect(rect);
+        } else {
+          setHoverRect(null);
+        }
       } else {
         // Place off-screen and hide
         container.style.width = "200px";
@@ -135,6 +143,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         container.style.pointerEvents = "none";
         container.style.zIndex = "-9999";
         container.style.borderRadius = "8px";
+        setHoverRect(null);
       }
 
       requestAnimationFrame(syncPlayerPosition);
@@ -197,6 +206,38 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <CreatePlaylistModal />
       <SleepTimerModal />
       <VideoPlayerModal />
+
+      {/* Root-Level MiniPlayer Hover Overlay for the Video Corner Preview */}
+      {hoverRect && activeVideoId === null && !showFullscreenPlayer && (
+        <div 
+          className="fixed z-[105] bg-transparent opacity-0 hover:opacity-100 transition-opacity duration-200 flex items-center justify-center cursor-pointer rounded-lg group pointer-events-auto"
+          style={{
+            width: `${hoverRect.width}px`,
+            height: `${hoverRect.height}px`,
+            top: `${hoverRect.top}px`,
+            left: `${hoverRect.left}px`,
+          }}
+          onClick={togglePlay}
+          title={isPlaying ? "Pause" : "Play"}
+        >
+          {isPlaying ? (
+            <Pause className="w-6 h-6 text-white drop-shadow-md" />
+          ) : (
+            <Play className="w-6 h-6 text-white translate-x-0.5 drop-shadow-md" />
+          )}
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowFullscreenPlayer(true);
+            }}
+            className="absolute top-1 right-1 p-1 rounded bg-black/60 hover:bg-black text-white/80 hover:text-white transition opacity-0 group-hover:opacity-100"
+            title="Open Fullscreen"
+          >
+            <Maximize2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
