@@ -43,8 +43,8 @@ export function VideoPlayerModal() {
 
       {/* Main Glassmorphic Container */}
       <div 
-        className={`relative w-full bg-zinc-950/80 border border-white/10 rounded-2xl overflow-hidden shadow-2xl flex flex-col transition-all duration-300
-          ${isFullscreen ? 'max-w-7xl aspect-video h-[90vh]' : 'max-w-4xl aspect-video'}`}
+        className={`relative w-full bg-zinc-950/80 border border-white/10 rounded-2xl overflow-hidden shadow-2xl flex flex-col transition-all duration-300 max-h-[85vh] aspect-video
+          ${isFullscreen ? 'max-w-7xl' : 'max-w-4xl'}`}
       >
         
         {/* Widescreen Video Player Anchor Placeholder */}

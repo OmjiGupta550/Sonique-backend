@@ -41,7 +41,7 @@ export function FullscreenPlayer() {
     isVideoMode
   } = usePlayerStore();
 
-  const { toggleLike, isLiked, accentColor, setAccentColor, setShowSleepTimerModal, playVideo } = useUIStore();
+  const { toggleLike, isLiked, accentColor, setAccentColor, setShowSleepTimerModal, playVideo, activeVideoId } = useUIStore();
   const [activeTab, setActiveTab] = useState<'player' | 'lyrics' | 'queue'>('player');
 
   const activeQueue = isShuffle ? shuffledQueue : queue;
@@ -162,16 +162,16 @@ export function FullscreenPlayer() {
         <main className="flex-1 min-h-0 flex flex-col md:flex-row p-6 md:p-12 overflow-hidden gap-8 md:gap-16 z-10 max-w-7xl mx-auto w-full items-center">
           
           {/* Left Panel: Cover Art & Controls - Constrained to h-full max-h-full with dynamic flex spacing */}
-          <div className={`h-full max-h-full flex flex-col justify-between items-center max-w-md mx-auto w-full py-2 transition-all duration-300 ${activeTab !== 'player' ? 'hidden md:flex' : 'flex'}`}>
+          <div className={`h-full max-h-full flex flex-col justify-between items-center ${isVideoMode ? 'max-w-2xl lg:max-w-3xl' : 'max-w-md'} mx-auto w-full py-2 transition-all duration-300 ${activeTab !== 'player' ? 'hidden md:flex' : 'flex'}`}>
             
             {/* Artwork Container - Dynamically shrinks with mb-3 to guarantee a separation gap */}
             <div 
-              className={`h-[25vh] sm:h-[30vh] md:h-[32vh] lg:h-[36vh] xl:h-[40vh] ${isVideoMode ? 'aspect-video w-full max-w-lg' : 'aspect-square'} rounded-2xl bg-zinc-900 border border-white/10 shadow-2xl relative group overflow-hidden mb-3 transition-all duration-700 hover:scale-[1.02] shrink`}
+              className={`h-[25vh] sm:h-[30vh] md:h-[32vh] lg:h-[36vh] xl:h-[40vh] ${isVideoMode ? 'aspect-video w-full max-w-2xl lg:max-w-3xl' : 'aspect-square'} rounded-2xl bg-zinc-900 border border-white/10 shadow-2xl relative group overflow-hidden mb-3 transition-all duration-700 hover:scale-[1.02] shrink`}
               style={{ 
                 boxShadow: `0 20px 50px -15px ${accentColor}40`,
               }}
             >
-              {isVideoMode ? (
+              {isVideoMode && activeVideoId === null ? (
                 <div 
                   id="youtube-player-placeholder"
                   className="w-full h-full rounded-2xl bg-zinc-950"
