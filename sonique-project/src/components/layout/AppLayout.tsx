@@ -229,6 +229,28 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <SleepTimerModal />
       <VideoPlayerModal />
 
+      {/* Persistent YouTube Player Container to prevent Stacking Context Sandwich bugs */}
+      <div 
+        id="hidden-youtube-player-container"
+        style={{
+          position: "fixed",
+          width: "200px",
+          height: "200px",
+          top: "-1000px",
+          left: "-1000px",
+          opacity: 0,
+          pointerEvents: "none",
+          zIndex: -9999,
+          borderRadius: "8px",
+          overflow: "hidden",
+          transition: "opacity 0.3s ease, transform 0.3s ease",
+          backgroundColor: "transparent"
+        }}
+      >
+        <div id="hidden-youtube-player-iframe" style={{ width: "100%", height: "100%" }} />
+      </div>
+
+
       {/* Root-Level MiniPlayer Hover Overlay for the Video Corner Preview */}
       {hoverRect && activeVideoId === null && !showFullscreenPlayer && (
         <div 
