@@ -85,7 +85,7 @@ export function MiniPlayer() {
           {/* Standard Square Album Art Cover image */}
           <div 
             className="w-14 h-14 rounded-lg bg-zinc-800 overflow-hidden shrink-0 cursor-pointer relative group border border-white/5 shadow-md"
-            onClick={() => setShowFullscreenPlayer(true)}
+            onClick={togglePlay}
           >
             <img 
               src={coverSrc} 

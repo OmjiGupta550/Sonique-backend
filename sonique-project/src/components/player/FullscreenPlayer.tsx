@@ -174,10 +174,11 @@ export function FullscreenPlayer() {
             
             {/* Artwork Container - Reverted back to original dimensions as requested */}
             <div 
-              className={`h-[25vh] sm:h-[30vh] md:h-[32vh] lg:h-[36vh] xl:h-[40vh] ${isVideoMode ? 'aspect-video w-full max-w-lg bg-transparent' : 'aspect-square bg-zinc-900'} rounded-2xl border border-white/10 shadow-2xl relative group overflow-hidden mb-3 transition-all duration-700 hover:scale-[1.02] shrink`}
+              className={`h-[25vh] sm:h-[30vh] md:h-[32vh] lg:h-[36vh] xl:h-[40vh] ${isVideoMode ? 'aspect-video w-full max-w-lg bg-transparent' : 'aspect-square bg-zinc-900'} rounded-2xl border border-white/10 shadow-2xl relative group overflow-hidden mb-3 transition-all duration-700 hover:scale-[1.02] shrink cursor-pointer`}
               style={{ 
                 boxShadow: `0 20px 50px -15px ${accentColor}40`,
               }}
+              onClick={togglePlay}
             >
               {isVideoMode && activeVideoId === null ? (
                 <div className="relative w-full h-full bg-transparent">
