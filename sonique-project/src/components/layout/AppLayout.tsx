@@ -118,9 +118,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         
         // Set to z-48 when overlays are active (above z-45 backgrounds, under z-50 panels)
         // Set to z-59 when overlays are active (above z-58 backgrounds, under z-60 panels)
-        // Set to z-57 when minimized (shows on top of mini-player z-[55] bar)
+        // Set to z-100 when minimized (shows on top of mini-player z-40 bar)
         const isOverlayActive = activeVideoId !== null || showFullscreenPlayer;
-        container.style.zIndex = isOverlayActive ? "59" : "57";
+        container.style.zIndex = isOverlayActive ? "59" : "100";
         
         // Inherit border radius from placeholder if possible
         const style = window.getComputedStyle(placeholder);
@@ -211,7 +211,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Root-Level MiniPlayer Hover Overlay for the Video Corner Preview */}
       {hoverRect && activeVideoId === null && !showFullscreenPlayer && (
         <div 
-          className="fixed z-[59] bg-transparent opacity-0 hover:opacity-100 transition-opacity duration-200 flex items-center justify-center cursor-pointer rounded-lg group pointer-events-auto"
+          className="fixed z-[105] bg-transparent opacity-0 hover:opacity-100 transition-opacity duration-200 flex items-center justify-center cursor-pointer rounded-lg group pointer-events-auto"
           style={{
             width: `${hoverRect.width}px`,
             height: `${hoverRect.height}px`,
