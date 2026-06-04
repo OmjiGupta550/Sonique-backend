@@ -158,7 +158,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
       set({ audio: globalAudio });
     },
 
-    playTrack: (track, fromQueue, isVideo = false) => {
+    playTrack: (track, fromQueue, isVideo) => {
       get().initAudio();
       const currentAudio = get().audio;
       if (!currentAudio) return;
@@ -168,7 +168,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
       const isSameTrack = activeTrack !== undefined && activeTrack.id === track.id;
       const preservedTime = isSameTrack ? get().currentTime : 0;
 
-      set({ isVideoMode: isVideo });
+      const shouldPlayVideo = isVideo !== undefined ? isVideo : (track.hasVideo || false);
+      set({ isVideoMode: shouldPlayVideo });
 
       const isSingleTrackPlay = !fromQueue || fromQueue.length <= 1;
       let newQueue = isSameTrack ? get().queue : (isSingleTrackPlay ? [track] : (fromQueue || get().queue));
