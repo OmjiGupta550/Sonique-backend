@@ -100,17 +100,6 @@ export function MiniPlayer() {
                   className="w-full h-full object-cover"
                 />
               )}
-              {/* Corner maximize hover overlay */}
-              <div 
-                className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center z-20 cursor-pointer"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  playVideo(activePlaybackTrack.id);
-                }}
-                title="Watch Video Fullscreen"
-              >
-                <Maximize2 className="w-4 h-4 text-white" />
-              </div>
             </div>
           ) : (
             /* Standard Square Album Art Cover image */

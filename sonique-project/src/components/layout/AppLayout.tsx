@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Sidebar } from '../sidebar/Sidebar';
 import { Header } from './Header';
 import { MiniPlayer } from '../player/MiniPlayer';
@@ -12,11 +12,12 @@ import { useUIStore } from '../../store/useUIStore';
 import { usePlayerStore } from '../../store/usePlayerStore';
 import { useKeyboard } from '../../hooks/useKeyboard';
 import { supabase } from '../../lib/supabase';
-import { Music, Disc } from 'lucide-react';
+import { Music, Disc, Maximize2 } from 'lucide-react';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { loadUserData, setProfile, isLoadingData, accentColor, activeVideoId } = useUIStore();
-  const { sleepTimerActive, decrementSleepTimer, initAudio, showFullscreenPlayer } = usePlayerStore();
+  const { loadUserData, setProfile, isLoadingData, accentColor, activeVideoId, playVideo } = useUIStore();
+  const { sleepTimerActive, decrementSleepTimer, initAudio, showFullscreenPlayer, queue, shuffledQueue, isShuffle, currentIndex } = usePlayerStore();
+  const [hoverRect, setHoverRect] = useState<DOMRect | null>(null);
 
   // Initialize keyboard shortcuts
   useKeyboard();
@@ -115,14 +116,21 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         container.style.opacity = "1";
         container.style.pointerEvents = "none";
         
-        // Dynamically assign z-index: z-35 for mini-player (under z-40 MiniPlayer)
+        // Dynamically assign z-index: z-100 for mini-player (to sit above MiniPlayer bar)
         // or z-48 for overlays (above z-45 backgrounds, under z-50 panels)
         const isOverlayActive = activeVideoId !== null || showFullscreenPlayer;
-        container.style.zIndex = isOverlayActive ? "48" : "35";
+        container.style.zIndex = isOverlayActive ? "48" : "100";
         
         // Inherit border radius from placeholder if possible
         const style = window.getComputedStyle(placeholder);
         container.style.borderRadius = style.borderRadius || "8px";
+
+        // Save rect for the root-level hover overlay when in mini player mode
+        if (!isOverlayActive) {
+          setHoverRect(rect);
+        } else {
+          setHoverRect(null);
+        }
       } else {
         // Place off-screen and hide
         container.style.width = "200px";
@@ -135,6 +143,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         container.style.pointerEvents = "none";
         container.style.zIndex = "-9999";
         container.style.borderRadius = "8px";
+        setHoverRect(null);
       }
 
       requestAnimationFrame(syncPlayerPosition);
@@ -197,6 +206,30 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <CreatePlaylistModal />
       <SleepTimerModal />
       <VideoPlayerModal />
+
+      {/* Root-Level MiniPlayer Hover Overlay for the Video Corner Preview */}
+      {hoverRect && activeVideoId === null && !showFullscreenPlayer && (
+        <div 
+          className="fixed z-[105] bg-black/60 opacity-0 hover:opacity-100 transition-opacity duration-200 flex items-center justify-center cursor-pointer rounded-lg border border-white/10 group pointer-events-auto"
+          style={{
+            width: `${hoverRect.width}px`,
+            height: `${hoverRect.height}px`,
+            top: `${hoverRect.top}px`,
+            left: `${hoverRect.left}px`,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            const activeQueue = isShuffle ? shuffledQueue : queue;
+            const activePlaybackTrack = activeQueue[currentIndex];
+            if (activePlaybackTrack) {
+              playVideo(activePlaybackTrack.id);
+            }
+          }}
+          title="Watch Video Fullscreen"
+        >
+          <Maximize2 className="w-4 h-4 text-white transition duration-200 group-hover:scale-110" />
+        </div>
+      )}
     </div>
   );
 }
