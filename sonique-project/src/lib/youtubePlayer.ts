@@ -40,20 +40,23 @@ class YouTubeAudioElement {
   private initPlayer() {
     if ((window as any).YT && (window as any).YT.Player) {
       this.createPlayer();
-    } else {
-      // Load YouTube Iframe API if not loaded
-      if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
-        const tag = document.createElement("script");
-        tag.src = "https://www.youtube.com/iframe_api";
-        const firstScriptTag = document.getElementsByTagName("script")[0];
-        firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
-      }
+      return;
+    }
 
-      const prevCallback = (window as any).onYouTubeIframeAPIReady;
-      (window as any).onYouTubeIframeAPIReady = () => {
-        if (prevCallback) prevCallback();
+    // Polling backup check to prevent initialization race condition or hot-reloading lock
+    const pollYT = setInterval(() => {
+      if ((window as any).YT && (window as any).YT.Player) {
+        clearInterval(pollYT);
         this.createPlayer();
-      };
+      }
+    }, 100);
+
+    // Load YouTube Iframe API if not loaded
+    if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      const firstScriptTag = document.getElementsByTagName("script")[0];
+      firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
     }
   }
 
@@ -161,10 +164,17 @@ class YouTubeAudioElement {
     this._duration = 0;
 
     if (this.isReady && this.player) {
-      this.player.cueVideoById({
-        videoId: this.videoId,
-        startSeconds: 0,
-      });
+      if (this.pendingPlay || !this.paused) {
+        this.player.loadVideoById({
+          videoId: this.videoId,
+          startSeconds: 0,
+        });
+      } else {
+        this.player.cueVideoById({
+          videoId: this.videoId,
+          startSeconds: 0,
+        });
+      }
       // Force duration detection
       setTimeout(() => {
         if (this.isReady && this.player && this.player.getDuration) {
