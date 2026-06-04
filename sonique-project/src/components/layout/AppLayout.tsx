@@ -113,7 +113,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         container.style.bottom = '';
         container.style.right = '';
         container.style.opacity = "1";
-        container.style.pointerEvents = "auto";
+        container.style.pointerEvents = "none";
         container.style.zIndex = "100"; // Render in front of modal/preview background
         
         // Inherit border radius from placeholder if possible

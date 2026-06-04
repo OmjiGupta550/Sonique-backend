@@ -7,7 +7,7 @@ import { X, Maximize2, Minimize2, Tv } from 'lucide-react';
 
 export function VideoPlayerModal() {
   const { activeVideoId, closeVideo, accentColor } = useUIStore();
-  const { queue, shuffledQueue, isShuffle, currentIndex } = usePlayerStore();
+  const { queue, shuffledQueue, isShuffle, currentIndex, togglePlay } = usePlayerStore();
 
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -53,10 +53,15 @@ export function VideoPlayerModal() {
             id="youtube-player-placeholder" 
             className="w-full h-full rounded-2xl overflow-hidden bg-black" 
           />
+          {/* Click Overlay to toggle play/pause and capture cursor events away from iframe branding */}
+          <div 
+            className="absolute inset-0 z-30 cursor-pointer"
+            onClick={togglePlay}
+          />
         </div>
 
         {/* Video Actions Header */}
-        <div className="absolute top-0 inset-x-0 p-4 bg-gradient-to-b from-black/80 to-transparent flex items-center justify-between z-20 pointer-events-none">
+        <div className="absolute top-0 inset-x-0 p-4 bg-gradient-to-b from-black/80 to-transparent flex items-center justify-between z-[110] pointer-events-none">
           
           {/* Logo Brand */}
           <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md py-1 px-3 rounded-full border border-white/5 shadow-lg select-none">

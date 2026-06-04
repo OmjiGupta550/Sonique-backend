@@ -108,7 +108,7 @@ export function FullscreenPlayer() {
         />
 
         {/* Top Header - Opaque solid background and GPU-accelerated layer locking to prevent sub-pixel font shifting */}
-        <header className="h-16 sticky top-0 flex items-center justify-between px-6 z-20 border-b border-white/5 bg-zinc-950 transform-gpu">
+        <header className="h-16 sticky top-0 flex items-center justify-between px-6 z-[110] border-b border-white/5 bg-zinc-950 transform-gpu">
           <button
             onClick={() => setShowFullscreenPlayer(false)}
             className="p-2 rounded-full hover:bg-white/5 transition"
@@ -172,10 +172,17 @@ export function FullscreenPlayer() {
               }}
             >
               {isVideoMode && activeVideoId === null ? (
-                <div 
-                  id="youtube-player-placeholder"
-                  className="w-full h-full rounded-2xl bg-zinc-950"
-                />
+                <div className="relative w-full h-full">
+                  <div 
+                    id="youtube-player-placeholder"
+                    className="w-full h-full rounded-2xl bg-zinc-950"
+                  />
+                  {/* Click Overlay to toggle play/pause and capture cursor events away from iframe branding */}
+                  <div 
+                    className="absolute inset-0 z-30 cursor-pointer"
+                    onClick={togglePlay}
+                  />
+                </div>
               ) : currentTrack.coverUrl ? (
                 <img
                   src={currentTrack.coverUrl}
