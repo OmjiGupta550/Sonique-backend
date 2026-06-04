@@ -35,8 +35,18 @@ export function TrackRow({ track, index, playlistId, onRemoveFromPlaylist, showI
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
-  const fallbackCover = "/placeholder.png";
-  const coverSrc = track.coverUrl && track.coverUrl.trim() !== '' ? track.coverUrl : fallbackCover;
+  const getCoverSrc = (t: typeof track) => {
+    const fallback = "/placeholder.png";
+    if (t.coverUrl && t.coverUrl.trim() !== '' && t.coverUrl !== 'null' && t.coverUrl !== 'undefined') {
+      return t.coverUrl;
+    }
+    if (t.id && t.id.length === 11) {
+      return `https://i.ytimg.com/vi/${t.id}/hqdefault.jpg`;
+    }
+    return fallback;
+  };
+
+  const coverSrc = getCoverSrc(track);
 
   return (
     <div 
@@ -80,7 +90,11 @@ export function TrackRow({ track, index, playlistId, onRemoveFromPlaylist, showI
             className="w-full h-full object-cover"
             onError={(e) => {
               e.currentTarget.onerror = null;
-              e.currentTarget.src = fallbackCover;
+              if (e.currentTarget.src !== `https://i.ytimg.com/vi/${track.id}/hqdefault.jpg` && track.id && track.id.length === 11) {
+                e.currentTarget.src = `https://i.ytimg.com/vi/${track.id}/hqdefault.jpg`;
+              } else {
+                e.currentTarget.src = "/placeholder.png";
+              }
             }}
           />
         </div>

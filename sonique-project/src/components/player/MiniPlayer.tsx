@@ -52,8 +52,18 @@ export function MiniPlayer() {
   };
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
-  const fallbackCover = "/placeholder.png";
-  const coverSrc = track.coverUrl && track.coverUrl.trim() !== '' ? track.coverUrl : fallbackCover;
+  const getCoverSrc = (t: typeof track) => {
+    const fallback = "/placeholder.png";
+    if (t.coverUrl && t.coverUrl.trim() !== '' && t.coverUrl !== 'null' && t.coverUrl !== 'undefined') {
+      return t.coverUrl;
+    }
+    if (t.id && t.id.length === 11) {
+      return `https://i.ytimg.com/vi/${t.id}/hqdefault.jpg`;
+    }
+    return fallback;
+  };
+
+  const coverSrc = getCoverSrc(track);
 
   return (
     <div className="fixed bottom-0 left-0 right-0 h-20 bg-zinc-950/90 border-t border-white/5 backdrop-blur-2xl z-50 select-none">
@@ -84,7 +94,11 @@ export function MiniPlayer() {
               className="w-full h-full object-cover transition duration-300 group-hover:scale-105" 
               onError={(e) => {
                 e.currentTarget.onerror = null;
-                e.currentTarget.src = fallbackCover;
+                if (e.currentTarget.src !== `https://i.ytimg.com/vi/${track.id}/hqdefault.jpg` && track.id && track.id.length === 11) {
+                  e.currentTarget.src = `https://i.ytimg.com/vi/${track.id}/hqdefault.jpg`;
+                } else {
+                  e.currentTarget.src = "/placeholder.png";
+                }
               }}
             />
             {/* Hover overlay play/pause indicator */}

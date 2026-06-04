@@ -192,20 +192,24 @@ export function FullscreenPlayer() {
                     onClick={togglePlay}
                   />
                 </div>
-              ) : currentTrack.coverUrl ? (
+              ) : (
                 <img
-                  src={currentTrack.coverUrl}
+                  src={
+                    currentTrack.coverUrl && currentTrack.coverUrl.trim() !== '' && currentTrack.coverUrl !== 'null' && currentTrack.coverUrl !== 'undefined'
+                      ? currentTrack.coverUrl
+                      : (currentTrack.id && currentTrack.id.length === 11 ? `https://i.ytimg.com/vi/${currentTrack.id}/hqdefault.jpg` : "/placeholder.png")
+                  }
                   alt={currentTrack.title}
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     e.currentTarget.onerror = null; // Prevent infinite loading loops
-                    e.currentTarget.src = "/placeholder.png"; // Premium fallback placeholder
+                    if (e.currentTarget.src !== `https://i.ytimg.com/vi/${currentTrack.id}/hqdefault.jpg` && currentTrack.id && currentTrack.id.length === 11) {
+                      e.currentTarget.src = `https://i.ytimg.com/vi/${currentTrack.id}/hqdefault.jpg`;
+                    } else {
+                      e.currentTarget.src = "/placeholder.png";
+                    }
                   }}
                 />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-zinc-700 bg-zinc-950">
-                  <Music2 className="w-16 h-16" />
-                </div>
               )}
             </div>
 

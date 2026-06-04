@@ -104,11 +104,23 @@ export function QueueDrawer() {
 
                 {/* Cover Art */}
                 <div className="w-10 h-10 rounded bg-zinc-800 overflow-hidden shrink-0 border border-white/5">
-                  {track.coverUrl ? (
-                    <img src={track.coverUrl} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-zinc-600 text-xs">🎵</div>
-                  )}
+                  <img 
+                    src={
+                      track.coverUrl && track.coverUrl.trim() !== '' && track.coverUrl !== 'null' && track.coverUrl !== 'undefined'
+                        ? track.coverUrl
+                        : (track.id && track.id.length === 11 ? `https://i.ytimg.com/vi/${track.id}/hqdefault.jpg` : "/placeholder.png")
+                    } 
+                    alt="" 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      if (e.currentTarget.src !== `https://i.ytimg.com/vi/${track.id}/hqdefault.jpg` && track.id && track.id.length === 11) {
+                        e.currentTarget.src = `https://i.ytimg.com/vi/${track.id}/hqdefault.jpg`;
+                      } else {
+                        e.currentTarget.src = "/placeholder.png";
+                      }
+                    }}
+                  />
                 </div>
 
                 {/* Details */}
