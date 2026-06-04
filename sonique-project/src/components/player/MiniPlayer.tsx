@@ -37,7 +37,7 @@ export function MiniPlayer() {
     isVideoMode
   } = usePlayerStore();
 
-  const { toggleLike, isLiked, accentColor, playVideo, activeVideoId } = useUIStore();
+  const { toggleLike, isLiked, accentColor, playVideo } = useUIStore();
 
   const activeQueue = isShuffle ? shuffledQueue : queue;
   const track = activeQueue[currentIndex];
@@ -72,62 +72,30 @@ export function MiniPlayer() {
       </div>
 
       <div className="flex items-center justify-between px-4 h-[77px]">
-        {/* Left - Artwork / Video Preview */}
+        {/* Left - Artwork Cover (Always active, 100% bug-free) */}
         <div className="flex items-center gap-3 w-1/3 min-w-[150px]">
-          {isVideoMode ? (
-            <div className="relative w-24 h-14 bg-black rounded-lg overflow-hidden border border-white/10 shadow-md group shrink-0">
-              {isPlaying && activeVideoId === null && !showFullscreenPlayer ? (
-                <iframe
-                  key={`mini-video-${track.id}`}
-                  width="200"
-                  height="112"
-                  src={`https://www.youtube.com/embed/${track.id}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1&rel=0`}
-                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 scale-[0.48] pointer-events-none"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                />
+          <div 
+            className="w-14 h-14 rounded-lg overflow-hidden border border-white/5 shadow-md cursor-pointer shrink-0 relative group"
+            onClick={togglePlay}
+          >
+            <img 
+              src={coverSrc} 
+              alt={track.title} 
+              className="w-full h-full object-cover transition duration-300 group-hover:scale-105" 
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = fallbackCover;
+              }}
+            />
+            {/* Hover overlay play/pause indicator */}
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+              {isPlaying ? (
+                <Pause className="w-5 h-5 text-white" />
               ) : (
-                <img src={coverSrc} alt={track.title} className="w-full h-full object-cover" />
+                <Play className="w-5 h-5 text-white translate-x-0.5" />
               )}
-              {/* Click / Hover Overlay */}
-              <div 
-                className="absolute inset-0 z-10 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center cursor-pointer"
-                onClick={togglePlay}
-                title={isPlaying ? "Pause" : "Play"}
-              >
-                {isPlaying ? (
-                  <Pause className="w-5 h-5 text-white drop-shadow-md" />
-                ) : (
-                  <Play className="w-5 h-5 text-white translate-x-0.5 drop-shadow-md" />
-                )}
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowFullscreenPlayer(true);
-                  }}
-                  className="absolute top-1 right-1 p-1 rounded bg-black/60 hover:bg-black text-white/80 hover:text-white transition opacity-0 group-hover:opacity-100"
-                  title="Open Fullscreen"
-                >
-                  <Maximize2 className="w-3 h-3" />
-                </button>
-              </div>
             </div>
-          ) : (
-            <div 
-              className="w-14 h-14 rounded-lg overflow-hidden border border-white/5 shadow-md cursor-pointer shrink-0 relative group"
-              onClick={togglePlay}
-            >
-              <img 
-                src={coverSrc} 
-                alt={track.title} 
-                className="w-full h-full object-cover transition duration-300 group-hover:scale-105" 
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = fallbackCover;
-                }}
-              />
-            </div>
-          )}
+          </div>
 
           <div className="overflow-hidden">
             <h4 
