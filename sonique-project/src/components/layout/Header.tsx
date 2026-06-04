@@ -21,7 +21,7 @@ export function Header() {
   };
 
   return (
-    <header className="h-16 bg-zinc-950/20 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-6 z-30 select-none">
+    <header className="h-16 bg-zinc-950/20 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-6 z-40 select-none">
       
       {/* Navigation Arrows */}
       <div className="flex items-center gap-2">
@@ -93,7 +93,7 @@ export function Header() {
 
         {/* Dropdown Menu */}
         {showDropdown && profile && (
-          <div className="absolute right-0 mt-2 bg-zinc-900 border border-white/10 rounded-xl shadow-2xl py-1.5 w-48 z-40">
+          <div className="absolute right-0 mt-2 bg-zinc-900 border border-white/10 rounded-xl shadow-2xl py-1.5 w-48 z-50">
             <Link
               href="/library?tab=profile"
               onClick={() => setShowDropdown(false)}

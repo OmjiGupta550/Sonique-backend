@@ -7,7 +7,7 @@ import { X, Maximize2, Minimize2, Tv } from 'lucide-react';
 
 export function VideoPlayerModal() {
   const { activeVideoId, closeVideo, accentColor } = useUIStore();
-  const { queue, shuffledQueue, isShuffle, currentIndex, togglePlay } = usePlayerStore();
+  const { queue, shuffledQueue, isShuffle, currentIndex, togglePlay, showFullscreenPlayer } = usePlayerStore();
 
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -26,7 +26,7 @@ export function VideoPlayerModal() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [closeVideo]);
 
-  if (!activeVideoId || !videoId) return null;
+  if (showFullscreenPlayer || !activeVideoId || !videoId) return null;
 
   return (
     <>

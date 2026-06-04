@@ -180,7 +180,7 @@ export function FullscreenPlayer() {
               }}
               onClick={togglePlay}
             >
-              {isVideoMode && activeVideoId === null ? (
+              {isVideoMode ? (
                 <div className="relative w-full h-full bg-transparent">
                   <div 
                     id="youtube-player-placeholder"
