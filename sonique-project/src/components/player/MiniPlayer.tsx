@@ -44,93 +44,6 @@ export function MiniPlayer() {
   const activeQueue = isShuffle ? shuffledQueue : queue;
   const activePlaybackTrack = activeQueue[currentIndex];
 
-  const [streamUrl, setStreamUrl] = useState<string | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const autoFullscreenRef = useRef(false);
-  const startOffsetRef = useRef(0);
-
-  // Sync browser fullscreen state and enable native controls during fullscreen playback
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const handleFullscreenChange = () => {
-      if (document.fullscreenElement === video) {
-        video.controls = true;
-      } else {
-        video.controls = false;
-      }
-    };
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-    };
-  }, [streamUrl]);
-
-  // Resolve direct streaming URL from Flask to avoid browser media redirect seek bugs
-  useEffect(() => {
-    if (!activePlaybackTrack?.id || !isVideoMode) return;
-    
-    setStreamUrl(null); // Reset on track change
-    
-    // Set startOffset to current playback time so the stream starts exactly where we are!
-    const initialTime = usePlayerStore.getState().currentTime;
-    startOffsetRef.current = initialTime;
-    const startParam = Math.floor(initialTime) > 0 ? `?start=${Math.floor(initialTime)}` : '';
-    
-    fetch(`${API_BASE}/stream/video/${activePlaybackTrack.id}`)
-      .then((res) => {
-        if (!res.ok) throw new Error('Network response was not ok');
-        return res.json();
-      })
-      .then((data) => {
-        if (data.stream_url) {
-          const finalUrl = startParam ? `${data.stream_url}${data.stream_url.includes('?') ? '&' : '?'}${startParam.replace('?', '')}` : data.stream_url;
-          setStreamUrl(finalUrl);
-        }
-      })
-      .catch((err) => {
-        console.error('Failed to resolve video stream in mini player:', err);
-        // Fallback: use redirect URL directly if JSON call fails
-        setStreamUrl(`${API_BASE}/stream/video/${activePlaybackTrack.id}?redirect=true${startParam ? '&' + startParam.replace('?', '') : ''}`);
-      });
-  }, [activePlaybackTrack?.id, isVideoMode]);
-
-  // Play/Pause state synchronization for HTML5 video
-  useEffect(() => {
-    if (!isVideoMode || !videoRef.current || videoRef.current.readyState < 1) return;
-    const video = videoRef.current;
-    
-    if (isPlaying) {
-      video.play().catch((err) => {
-        console.warn('Playback failed or interrupted:', err);
-      });
-    } else {
-      video.pause();
-    }
-  }, [isPlaying, isVideoMode, activePlaybackTrack?.id, streamUrl]);
-
-  // Volume & Mute state synchronization for HTML5 video
-  useEffect(() => {
-    if (!isVideoMode || !videoRef.current) return;
-    videoRef.current.volume = volume;
-    videoRef.current.muted = isMuted;
-  }, [volume, isMuted, isVideoMode, streamUrl]);
-
-  // Handle manual seeking from bottom slider progress bar (only seek when metadata is loaded!)
-  useEffect(() => {
-    if (!isVideoMode || !videoRef.current || videoRef.current.readyState < 1) return;
-    const video = videoRef.current;
-    const trueVideoTime = video.currentTime + startOffsetRef.current;
-    if (Math.abs(trueVideoTime - currentTime) > 1.5) {
-      startOffsetRef.current = currentTime;
-      const baseUrl = `${API_BASE}/stream/video/hd/${activePlaybackTrack.id}`;
-      setStreamUrl(`${baseUrl}?start=${Math.floor(currentTime)}`);
-      video.load();
-    }
-  }, [currentTime, isVideoMode]);
-
   if (!activePlaybackTrack) return null;
 
   // Format seconds to mm:ss
@@ -171,39 +84,14 @@ export function MiniPlayer() {
         {/* Left: Metadata */}
         <div className="flex items-center gap-3 w-1/3 min-w-[150px]">
           {isVideoMode ? (
-            /* Widescreen HTML5 Video Corner Preview */
+            /* Widescreen YouTube Video Corner Preview Anchor */
             <div 
               className="w-24 h-14 rounded-lg bg-zinc-950 overflow-hidden shrink-0 relative border border-white/10 shadow-md group"
             >
-              {activeVideoId === null && !showFullscreenPlayer && streamUrl ? (
-                <video
-                  ref={videoRef}
-                  src={streamUrl}
-                  className="w-full h-full object-contain rounded-lg bg-zinc-950"
-                  playsInline
-                  autoPlay={isPlaying}
-                  muted={isMuted}
-                  controls={false}
-                  onLoadedMetadata={(e) => {
-                    const video = e.currentTarget;
-                    if (autoFullscreenRef.current) {
-                      autoFullscreenRef.current = false;
-                      video.requestFullscreen().catch(console.error);
-                    }
-                  }}
-                  onSeeked={(e) => {
-                    const video = e.currentTarget;
-                    if (isPlaying) {
-                      video.play().catch(console.error);
-                    }
-                  }}
-                  onTimeUpdate={(e) => {
-                    setCurrentTime(e.currentTarget.currentTime + startOffsetRef.current);
-                  }}
-                  onDurationChange={(e) => {
-                    // Retain track duration from store to avoid range-based stream duration issues
-                  }}
-                  onEnded={() => next()}
+              {activeVideoId === null && !showFullscreenPlayer ? (
+                <div 
+                  id="youtube-player-placeholder"
+                  className="w-full h-full rounded-lg bg-zinc-950"
                 />
               ) : (
                 <img 
@@ -217,11 +105,9 @@ export function MiniPlayer() {
                 className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center z-20 cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (videoRef.current) {
-                    videoRef.current.requestFullscreen().catch(console.error);
-                  }
+                  playVideo(activePlaybackTrack.id);
                 }}
-                title="Fullscreen Video"
+                title="Watch Video Fullscreen"
               >
                 <Maximize2 className="w-4 h-4 text-white" />
               </div>
@@ -366,21 +252,17 @@ export function MiniPlayer() {
           {activePlaybackTrack.hasVideo && (
             <button
               onClick={() => {
-                if (isVideoMode) {
-                  if (videoRef.current) {
-                    videoRef.current.requestFullscreen().catch(console.error);
-                  }
-                } else {
-                  autoFullscreenRef.current = true;
+                if (!isVideoMode) {
                   playTrack(activePlaybackTrack, undefined, true);
                 }
+                playVideo(activePlaybackTrack.id);
               }}
               className={`transition shrink-0 mr-1 p-1 rounded-full ${
                 isVideoMode 
                   ? 'text-red-400 bg-red-500/10 border border-red-500/20 shadow-inner animate-pulse hover:scale-105' 
                   : 'text-zinc-400 hover:text-red-400'
               }`}
-              title={isVideoMode ? "Fullscreen Video" : "Watch Video"}
+              title={isVideoMode ? "Watch Video" : "Watch Video"}
             >
               <Tv className="w-5 h-5" />
             </button>

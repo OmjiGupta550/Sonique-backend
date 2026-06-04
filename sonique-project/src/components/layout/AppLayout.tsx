@@ -85,6 +85,64 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Anchor-based YouTube Player Iframe positioning engine
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let active = true;
+
+    const syncPlayerPosition = () => {
+      if (!active) return;
+
+      const container = document.getElementById("hidden-youtube-player-container");
+      if (!container) {
+        requestAnimationFrame(syncPlayerPosition);
+        return;
+      }
+
+      // Check if a placeholder is currently rendered and visible on screen
+      const placeholder = document.getElementById("youtube-player-placeholder");
+      if (placeholder) {
+        const rect = placeholder.getBoundingClientRect();
+        
+        // Match the placeholder's screen position and size
+        container.style.width = `${rect.width}px`;
+        container.style.height = `${rect.height}px`;
+        container.style.top = `${rect.top}px`;
+        container.style.left = `${rect.left}px`;
+        container.style.bottom = '';
+        container.style.right = '';
+        container.style.opacity = "1";
+        container.style.pointerEvents = "auto";
+        container.style.zIndex = "100"; // Render in front of modal/preview background
+        
+        // Inherit border radius from placeholder if possible
+        const style = window.getComputedStyle(placeholder);
+        container.style.borderRadius = style.borderRadius || "8px";
+      } else {
+        // Place off-screen and hide
+        container.style.width = "200px";
+        container.style.height = "200px";
+        container.style.top = "";
+        container.style.left = "";
+        container.style.bottom = "-500px";
+        container.style.right = "-500px";
+        container.style.opacity = "0";
+        container.style.pointerEvents = "none";
+        container.style.zIndex = "-9999";
+        container.style.borderRadius = "8px";
+      }
+
+      requestAnimationFrame(syncPlayerPosition);
+    };
+
+    requestAnimationFrame(syncPlayerPosition);
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   // Trigger global document click to initialize HTMLAudioElement on first user interaction
   useEffect(() => {
     const handleFirstClick = () => {

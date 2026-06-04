@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { fetchLyrics, LyricLine } from '../lib/lrclib';
 import { trackPlay, trackSkip, trackGenericAction } from '../lib/recommendations';
 import { API_BASE } from '../lib/config';
+import { createYouTubeAudioElement } from '../lib/youtubePlayer';
+
 
 export interface PlayerTrack {
   id: string;
@@ -91,7 +93,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
     initAudio: () => {
       if (typeof window === 'undefined' || get().audio) return;
 
-      globalAudio = new Audio();
+      globalAudio = createYouTubeAudioElement();
       globalAudio.volume = get().volume;
 
       // Event Listeners
@@ -192,56 +194,34 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
         set({ shuffledQueue: shuffled, currentIndex: 0 });
       }
 
-      if (isVideo) {
-        // Pause standard audio element completely to avoid double sound!
-        currentAudio.pause();
-        currentAudio.src = '';
-        set({ isPlaying: true, duration: track.duration || 180 });
-        
-        // Log play action to personalized engine
-        trackPlay(track);
-        
-        // Save to browser listening history (Local Cache) & Add to Supabase History asynchronously
-        if (typeof window !== 'undefined') {
-          const hist = JSON.parse(localStorage.getItem('sonique_history') || '[]');
-          const updated = [track, ...hist.filter((h: any) => h.id !== track.id)].slice(0, 50);
-          localStorage.setItem('sonique_history', JSON.stringify(updated));
-          window.dispatchEvent(new Event('sonique_history_changed'));
-        }
-        
-        // Fetch lyrics for the active video track if not already loaded
-        if (!isSameTrack) {
-          get().fetchLyricsForCurrent();
-        }
-      } else {
-        currentAudio.src = track.sourceUrl;
-        currentAudio.load();
-        if (preservedTime > 0) {
-          currentAudio.currentTime = preservedTime;
-        }
-        currentAudio.play()
-          .then(() => {
-            set({ isPlaying: true });
-            if (!isSameTrack) {
-              get().fetchLyricsForCurrent();
-            }
-            
-            // Log play action to personalized engine
-            trackPlay(track);
-            
-            // Save to browser listening history (Local Cache) & Add to Supabase History asynchronously
-            if (typeof window !== 'undefined') {
-              const hist = JSON.parse(localStorage.getItem('sonique_history') || '[]');
-              const updated = [track, ...hist.filter((h: any) => h.id !== track.id)].slice(0, 50);
-              localStorage.setItem('sonique_history', JSON.stringify(updated));
-              // Dispatch custom event to update UI instantly
-              window.dispatchEvent(new Event('sonique_history_changed'));
-            }
-          })
-          .catch((err) => {
-            console.error('Audio playback failed, trying fallback stream...', err);
-          });
+      currentAudio.src = track.sourceUrl;
+      currentAudio.load();
+      if (preservedTime > 0) {
+        currentAudio.currentTime = preservedTime;
       }
+      currentAudio.play()
+        .then(() => {
+          set({ isPlaying: true });
+          if (!isSameTrack) {
+            get().fetchLyricsForCurrent();
+          }
+          
+          // Log play action to personalized engine
+          trackPlay(track);
+          
+          // Save to browser listening history (Local Cache) & Add to Supabase History asynchronously
+          if (typeof window !== 'undefined') {
+            const hist = JSON.parse(localStorage.getItem('sonique_history') || '[]');
+            const updated = [track, ...hist.filter((h: any) => h.id !== track.id)].slice(0, 50);
+            localStorage.setItem('sonique_history', JSON.stringify(updated));
+            // Dispatch custom event to update UI instantly
+            window.dispatchEvent(new Event('sonique_history_changed'));
+          }
+        })
+        .catch((err) => {
+          console.error('Audio playback failed, trying fallback stream...', err);
+        });
+
 
       // Automatically create a vibe list of at least 50 matching vibe tracks in the background
       const modeChanged = get().isVideoMode !== isVideo;
@@ -307,12 +287,6 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
       get().initAudio();
       const currentAudio = get().audio;
       if (get().currentIndex === -1) return;
-
-      if (get().isVideoMode) {
-        set({ isPlaying: !get().isPlaying });
-        return;
-      }
-
       if (!currentAudio) return;
 
       if (get().isPlaying) {
@@ -387,7 +361,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
     seek: (time) => {
       const currentAudio = get().audio;
       set({ currentTime: time });
-      if (currentAudio && !get().isVideoMode) {
+      if (currentAudio) {
         currentAudio.currentTime = time;
       }
       

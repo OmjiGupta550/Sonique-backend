@@ -79,93 +79,6 @@ export function FullscreenPlayer() {
     };
   }, [currentTrack, setAccentColor]);
 
-  const [streamUrl, setStreamUrl] = useState<string | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const autoFullscreenRef = useRef(false);
-  const startOffsetRef = useRef(0);
-
-  // Sync browser fullscreen state and enable native controls during fullscreen playback
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const handleFullscreenChange = () => {
-      if (document.fullscreenElement === video) {
-        video.controls = true;
-      } else {
-        video.controls = false;
-      }
-    };
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-    };
-  }, [streamUrl]);
-
-  // Resolve direct streaming URL from Flask to avoid browser media redirect seek bugs
-  useEffect(() => {
-    if (!currentTrack?.id || !isVideoMode || !showFullscreenPlayer) return;
-    
-    setStreamUrl(null); // Reset on track change
-    
-    // Set startOffset to current playback time so the stream starts exactly where we are!
-    const initialTime = usePlayerStore.getState().currentTime;
-    startOffsetRef.current = initialTime;
-    const startParam = Math.floor(initialTime) > 0 ? `?start=${Math.floor(initialTime)}` : '';
-    
-    fetch(`${API_BASE}/stream/video/${currentTrack.id}`)
-      .then((res) => {
-        if (!res.ok) throw new Error('Network response was not ok');
-        return res.json();
-      })
-      .then((data) => {
-        if (data.stream_url) {
-          const finalUrl = startParam ? `${data.stream_url}${data.stream_url.includes('?') ? '&' : '?'}${startParam.replace('?', '')}` : data.stream_url;
-          setStreamUrl(finalUrl);
-        }
-      })
-      .catch((err) => {
-        console.error('Failed to resolve video stream in fullscreen player:', err);
-        // Fallback: use redirect URL directly if JSON call fails
-        setStreamUrl(`${API_BASE}/stream/video/${currentTrack.id}?redirect=true${startParam ? '&' + startParam.replace('?', '') : ''}`);
-      });
-  }, [currentTrack?.id, isVideoMode, showFullscreenPlayer]);
-
-  // Play/Pause state synchronization for HTML5 video
-  useEffect(() => {
-    if (!isVideoMode || !videoRef.current || videoRef.current.readyState < 1 || !showFullscreenPlayer) return;
-    const video = videoRef.current;
-    
-    if (isPlaying) {
-      video.play().catch((err) => {
-        console.warn('Playback failed or interrupted:', err);
-      });
-    } else {
-      video.pause();
-    }
-  }, [isPlaying, isVideoMode, currentTrack?.id, streamUrl, showFullscreenPlayer]);
-
-  // Volume & Mute state synchronization for HTML5 video
-  useEffect(() => {
-    if (!isVideoMode || !videoRef.current || !showFullscreenPlayer) return;
-    videoRef.current.volume = volume;
-    videoRef.current.muted = isMuted;
-  }, [volume, isMuted, isVideoMode, streamUrl, showFullscreenPlayer]);
-
-  // Handle manual seeking from progress bar slider (only seek when metadata is loaded!)
-  useEffect(() => {
-    if (!isVideoMode || !videoRef.current || videoRef.current.readyState < 1 || !showFullscreenPlayer) return;
-    const video = videoRef.current;
-    const trueVideoTime = video.currentTime + startOffsetRef.current;
-    if (Math.abs(trueVideoTime - currentTime) > 1.5) {
-      startOffsetRef.current = currentTime;
-      const baseUrl = `${API_BASE}/stream/video/hd/${currentTrack.id}`;
-      setStreamUrl(`${baseUrl}?start=${Math.floor(currentTime)}`);
-      video.load();
-    }
-  }, [currentTime, isVideoMode, showFullscreenPlayer, currentTrack?.id]);
-
   if (!showFullscreenPlayer || !currentTrack) return null;
 
   const percent = duration > 0 ? (currentTime / duration) * 100 : 0;
@@ -258,35 +171,10 @@ export function FullscreenPlayer() {
                 boxShadow: `0 20px 50px -15px ${accentColor}40`,
               }}
             >
-              {isVideoMode && streamUrl ? (
-                <video
-                  ref={videoRef}
-                  src={streamUrl}
-                  className="w-full h-full object-contain rounded-2xl bg-zinc-950"
-                  playsInline
-                  autoPlay={isPlaying}
-                  muted={isMuted}
-                  controls={false}
-                  onLoadedMetadata={(e) => {
-                    const video = e.currentTarget;
-                    if (autoFullscreenRef.current) {
-                      autoFullscreenRef.current = false;
-                      video.requestFullscreen().catch(console.error);
-                    }
-                  }}
-                  onSeeked={(e) => {
-                    const video = e.currentTarget;
-                    if (isPlaying) {
-                      video.play().catch(console.error);
-                    }
-                  }}
-                  onTimeUpdate={(e) => {
-                    setCurrentTime(e.currentTarget.currentTime + startOffsetRef.current);
-                  }}
-                  onDurationChange={(e) => {
-                    // Retain track duration from store to avoid range-based stream duration issues
-                  }}
-                  onEnded={() => next()}
+              {isVideoMode ? (
+                <div 
+                  id="youtube-player-placeholder"
+                  className="w-full h-full rounded-2xl bg-zinc-950"
                 />
               ) : currentTrack.coverUrl ? (
                 <img
@@ -315,19 +203,15 @@ export function FullscreenPlayer() {
                 {(isVideoMode || currentTrack.hasVideo) && (
                   <button
                     onClick={() => {
-                      if (isVideoMode) {
-                        if (videoRef.current) {
-                          videoRef.current.requestFullscreen().catch(console.error);
-                        }
-                      } else {
-                        autoFullscreenRef.current = true;
+                      if (!isVideoMode) {
                         playTrack(currentTrack, undefined, true);
                       }
+                      playVideo(currentTrack.id);
                     }}
                     className={`p-3 rounded-full hover:bg-white/5 transition ${
                       isVideoMode ? 'text-red-400 bg-red-500/10 animate-pulse' : 'text-zinc-400 hover:text-red-400'
                     }`}
-                    title={isVideoMode ? "Fullscreen Video" : "Watch Video"}
+                    title={isVideoMode ? "Watch Video" : "Watch Video"}
                   >
                     <Tv className="w-6 h-6" />
                   </button>
