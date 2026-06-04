@@ -92,23 +92,31 @@ export function FullscreenPlayer() {
 
   return (
     <AnimatePresence>
+      {/* Widescreen Background Panel (z-40) */}
       <motion.div
-        initial={{ y: '100%' }}
-        animate={{ y: 0 }}
-        exit={{ y: '100%' }}
-        transition={{ type: 'spring', damping: 25, stiffness: 120 }}
-        className="fixed inset-0 z-50 bg-zinc-950 flex flex-col overflow-hidden text-white"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-40 bg-zinc-950 overflow-hidden pointer-events-none"
       >
-        {/* Dynamic Blurred Background Gradient */}
         <div 
           className="absolute inset-0 opacity-40 blur-[120px] pointer-events-none transition-all duration-1000 select-none scale-110"
           style={{
             background: `radial-gradient(circle at 50% 30%, ${accentColor} 0%, rgba(9, 9, 11, 0) 60%)`
           }}
         />
+      </motion.div>
 
-        {/* Top Header - Opaque solid background and GPU-accelerated layer locking to prevent sub-pixel font shifting */}
-        <header className="h-16 sticky top-0 flex items-center justify-between px-6 z-[110] border-b border-white/5 bg-zinc-950 transform-gpu">
+      {/* Content Panel (z-130) */}
+      <motion.div
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        exit={{ y: '100%' }}
+        transition={{ type: 'spring', damping: 25, stiffness: 120 }}
+        className="fixed inset-0 z-[130] flex flex-col overflow-hidden text-white pointer-events-none"
+      >
+        {/* Top Header */}
+        <header className="h-16 sticky top-0 flex items-center justify-between px-6 z-20 border-b border-white/5 bg-zinc-950 transform-gpu pointer-events-auto">
           <button
             onClick={() => setShowFullscreenPlayer(false)}
             className="p-2 rounded-full hover:bg-white/5 transition"
@@ -116,7 +124,7 @@ export function FullscreenPlayer() {
             <ChevronDown className="w-6 h-6" />
           </button>
           
-          {/* Centered Tabs - Centered vertically perfectly using standard auto-centering */}
+          {/* Centered Tabs */}
           <div className="flex items-center gap-6 font-semibold text-sm">
             <button
               onClick={() => setActiveTab('player')}
@@ -158,24 +166,24 @@ export function FullscreenPlayer() {
           </div>
         </header>
 
-        {/* Core Layout Split - min-h-0 locks height to screen dimensions to prevent whole-page scrolling */}
-        <main className="flex-1 min-h-0 flex flex-col md:flex-row p-6 md:p-12 overflow-hidden gap-8 md:gap-16 z-10 max-w-7xl mx-auto w-full items-center">
+        {/* Core Layout Split */}
+        <main className="flex-1 min-h-0 flex flex-col md:flex-row p-6 md:p-12 overflow-hidden gap-8 md:gap-16 z-10 max-w-7xl mx-auto w-full items-center pointer-events-auto">
           
-          {/* Left Panel: Cover Art & Controls - Constrained to h-full max-h-full with dynamic flex spacing */}
-          <div className={`h-full max-h-full flex flex-col justify-between items-center ${isVideoMode ? 'max-w-2xl lg:max-w-3xl' : 'max-w-md'} mx-auto w-full py-2 transition-all duration-300 ${activeTab !== 'player' ? 'hidden md:flex' : 'flex'}`}>
+          {/* Left Panel: Cover Art & Controls */}
+          <div className={`h-full max-h-full flex flex-col justify-between items-center max-w-md mx-auto w-full py-2 transition-all duration-300 ${activeTab !== 'player' ? 'hidden md:flex' : 'flex'}`}>
             
-            {/* Artwork Container - Dynamically shrinks with mb-3 to guarantee a separation gap */}
+            {/* Artwork Container - Reverted back to original dimensions as requested */}
             <div 
-              className={`h-[25vh] sm:h-[30vh] md:h-[32vh] lg:h-[36vh] xl:h-[40vh] ${isVideoMode ? 'aspect-video w-full max-w-2xl lg:max-w-3xl' : 'aspect-square'} rounded-2xl bg-zinc-900 border border-white/10 shadow-2xl relative group overflow-hidden mb-3 transition-all duration-700 hover:scale-[1.02] shrink`}
+              className={`h-[25vh] sm:h-[30vh] md:h-[32vh] lg:h-[36vh] xl:h-[40vh] ${isVideoMode ? 'aspect-video w-full max-w-lg bg-transparent' : 'aspect-square bg-zinc-900'} rounded-2xl border border-white/10 shadow-2xl relative group overflow-hidden mb-3 transition-all duration-700 hover:scale-[1.02] shrink`}
               style={{ 
                 boxShadow: `0 20px 50px -15px ${accentColor}40`,
               }}
             >
               {isVideoMode && activeVideoId === null ? (
-                <div className="relative w-full h-full">
+                <div className="relative w-full h-full bg-transparent">
                   <div 
                     id="youtube-player-placeholder"
-                    className="w-full h-full rounded-2xl bg-zinc-950"
+                    className="w-full h-full rounded-2xl bg-transparent"
                   />
                   {/* Click Overlay to toggle play/pause and capture cursor events away from iframe branding */}
                   <div 
@@ -324,7 +332,7 @@ export function FullscreenPlayer() {
                       </div>
                     </div>
                   );
-                })}
+                 })}
 
                 {activeQueue.length === 0 && (
                   <p className="text-zinc-500 text-center italic mt-12 text-sm">Queue is empty</p>
@@ -340,7 +348,7 @@ export function FullscreenPlayer() {
 
         {/* Compact bottom control bar for mobile when in lyrics or queue tab */}
         {activeTab !== 'player' && (
-          <div className="md:hidden border-t border-white/5 bg-zinc-950/80 backdrop-blur-md p-4 flex items-center justify-between z-20">
+          <div className="md:hidden border-t border-white/5 bg-zinc-950/80 backdrop-blur-md p-4 flex items-center justify-between z-20 pointer-events-auto">
             <div className="flex items-center gap-3 overflow-hidden flex-1 mr-4">
               <img
                 src={currentTrack.coverUrl || ''}

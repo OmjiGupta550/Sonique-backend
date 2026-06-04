@@ -60,7 +60,7 @@ export function MiniPlayer() {
   const coverSrc = activePlaybackTrack.coverUrl && activePlaybackTrack.coverUrl.trim() !== '' ? activePlaybackTrack.coverUrl : fallbackCover;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-20 bg-zinc-950/80 border-t border-white/5 backdrop-blur-2xl flex flex-col z-40 select-none">
+    <div className="fixed bottom-0 left-0 right-0 h-20 bg-zinc-950/80 border-t border-white/5 backdrop-blur-2xl flex flex-col z-[120] select-none">
       {/* Top Edge Progress Bar */}
       <div 
         className="w-full h-[3px] bg-zinc-800 cursor-pointer relative"
@@ -91,7 +91,7 @@ export function MiniPlayer() {
               {activeVideoId === null && !showFullscreenPlayer ? (
                 <div 
                   id="youtube-player-placeholder"
-                  className="w-full h-full rounded-lg bg-zinc-950"
+                  className="w-full h-full rounded-lg bg-transparent"
                 />
               ) : (
                 <img 
