@@ -126,6 +126,27 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         const style = window.getComputedStyle(placeholder);
         container.style.borderRadius = style.borderRadius || "8px";
 
+        // Throttled debug log (once per second)
+        if (typeof window !== "undefined") {
+          (window as any).syncLogCounter = ((window as any).syncLogCounter || 0) + 1;
+          if ((window as any).syncLogCounter % 60 === 0) {
+            console.log("[Sync Debug] Placeholder rect:", {
+              width: rect.width,
+              height: rect.height,
+              top: rect.top,
+              left: rect.left
+            }, "Container style:", {
+              width: container.style.width,
+              height: container.style.height,
+              top: container.style.top,
+              left: container.style.left,
+              zIndex: container.style.zIndex,
+              opacity: container.style.opacity,
+              pointerEvents: container.style.pointerEvents
+            });
+          }
+        }
+
         // Save rect for the root-level hover overlay when in mini player mode
         if (!isOverlayActive) {
           setHoverRect(rect);
