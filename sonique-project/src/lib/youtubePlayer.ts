@@ -3,6 +3,7 @@ class YouTubeAudioElement {
   private isReady: boolean = false;
   private videoId: string = "";
   private pendingPlay: boolean = false;
+  private isLoaded: boolean = false;
   private queuedSrc: string = "";
   private listeners: { [event: string]: Function[] } = {};
   private _currentTime: number = 0;
@@ -159,29 +160,11 @@ class YouTubeAudioElement {
       }
     }
 
-    this.videoId = vidId;
-    this._currentTime = 0;
-    this._duration = 0;
-
-    if (this.isReady && this.player) {
-      if (this.pendingPlay || !this.paused) {
-        this.player.loadVideoById({
-          videoId: this.videoId,
-          startSeconds: 0,
-        });
-      } else {
-        this.player.cueVideoById({
-          videoId: this.videoId,
-          startSeconds: 0,
-        });
-      }
-      // Force duration detection
-      setTimeout(() => {
-        if (this.isReady && this.player && this.player.getDuration) {
-          this._duration = this.player.getDuration() || 0;
-          this.trigger("durationchange");
-        }
-      }, 500);
+    if (this.videoId !== vidId) {
+      this.videoId = vidId;
+      this._currentTime = 0;
+      this._duration = 0;
+      this.isLoaded = false;
     }
   }
 
@@ -245,7 +228,23 @@ class YouTubeAudioElement {
   play(): Promise<void> {
     this.pendingPlay = true;
     if (this.isReady && this.player && this.videoId) {
-      this.player.playVideo();
+      if (!this.isLoaded) {
+        this.player.loadVideoById({
+          videoId: this.videoId,
+          startSeconds: this._currentTime || 0,
+        });
+        this.isLoaded = true;
+
+        // Force duration detection on load
+        setTimeout(() => {
+          if (this.isReady && this.player && this.player.getDuration) {
+            this._duration = this.player.getDuration() || 0;
+            this.trigger("durationchange");
+          }
+        }, 800);
+      } else {
+        this.player.playVideo();
+      }
       this.pendingPlay = false;
     }
     return Promise.resolve();
