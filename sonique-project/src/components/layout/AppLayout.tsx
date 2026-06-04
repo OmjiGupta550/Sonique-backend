@@ -57,7 +57,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   // Register or Unregister PWA Service Worker depending on environment
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-      const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const hostname = window.location.hostname;
+      const isDev = process.env.NODE_ENV === 'development' || 
+                    hostname === 'localhost' || 
+                    hostname === '127.0.0.1' ||
+                    hostname.startsWith('192.168.') ||
+                    hostname.startsWith('10.') ||
+                    hostname.startsWith('172.') ||
+                    hostname.endsWith('.local');
       
       if (isDev) {
         // Unregister service worker in development to prevent caching Next.js dev bundles
