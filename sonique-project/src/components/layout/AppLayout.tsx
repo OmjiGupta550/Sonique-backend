@@ -15,8 +15,8 @@ import { supabase } from '../../lib/supabase';
 import { Music, Disc } from 'lucide-react';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { loadUserData, setProfile, isLoadingData, accentColor } = useUIStore();
-  const { sleepTimerActive, decrementSleepTimer, initAudio } = usePlayerStore();
+  const { loadUserData, setProfile, isLoadingData, accentColor, activeVideoId } = useUIStore();
+  const { sleepTimerActive, decrementSleepTimer, initAudio, showFullscreenPlayer } = usePlayerStore();
 
   // Initialize keyboard shortcuts
   useKeyboard();
@@ -114,7 +114,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         container.style.right = '';
         container.style.opacity = "1";
         container.style.pointerEvents = "none";
-        container.style.zIndex = "100"; // Render in front of modal/preview background
+        
+        // Dynamically assign z-index: z-35 for mini-player (under z-40 MiniPlayer)
+        // or z-48 for overlays (above z-45 backgrounds, under z-50 panels)
+        const isOverlayActive = activeVideoId !== null || showFullscreenPlayer;
+        container.style.zIndex = isOverlayActive ? "48" : "35";
         
         // Inherit border radius from placeholder if possible
         const style = window.getComputedStyle(placeholder);
@@ -141,7 +145,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     return () => {
       active = false;
     };
-  }, []);
+  }, [activeVideoId, showFullscreenPlayer]);
 
   // Trigger global document click to initialize HTMLAudioElement on first user interaction
   useEffect(() => {

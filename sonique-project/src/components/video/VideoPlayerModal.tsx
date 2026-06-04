@@ -30,24 +30,24 @@ export function VideoPlayerModal() {
 
   return (
     <>
-      {/* Background Overlay Backdrop (z-40) */}
+      {/* Background Overlay Backdrop (z-[45]) */}
       <div 
-        className="fixed inset-0 bg-black/85 backdrop-blur-md z-40 animate-fade-in select-none"
+        className="fixed inset-0 bg-black/85 backdrop-blur-md z-[45] animate-fade-in select-none"
         onClick={closeVideo}
       />
       
-      {/* Decorative Blur Background Lights (z-40) */}
+      {/* Decorative Blur Background Lights (z-[45]) */}
       <div 
-        className="fixed top-1/4 left-1/4 w-96 h-96 rounded-full opacity-20 blur-[100px] pointer-events-none transition duration-1000 z-40"
+        className="fixed top-1/4 left-1/4 w-96 h-96 rounded-full opacity-20 blur-[100px] pointer-events-none transition duration-1000 z-[45]"
         style={{ backgroundColor: accentColor }}
       />
       <div 
-        className="fixed bottom-1/4 right-1/4 w-96 h-96 rounded-full opacity-20 blur-[100px] pointer-events-none transition duration-1000 z-40"
+        className="fixed bottom-1/4 right-1/4 w-96 h-96 rounded-full opacity-20 blur-[100px] pointer-events-none transition duration-1000 z-[45]"
         style={{ backgroundColor: accentColor }}
       />
 
-      {/* Main Content Flex Overlay (z-130) */}
-      <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 pointer-events-none select-none animate-fade-in">
+      {/* Main Content Flex Overlay (z-50) */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none select-none animate-fade-in">
         {/* Main Glassmorphic Container */}
         <div 
           className={`relative w-full bg-transparent border border-white/10 rounded-2xl overflow-hidden shadow-2xl flex flex-col transition-all duration-300 max-h-[85vh] aspect-video pointer-events-auto
