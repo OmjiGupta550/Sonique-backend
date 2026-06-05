@@ -211,7 +211,7 @@ def search():
             })
             
     # Run parallel video matching for the top 15 results to keep performance fast
-    songs_to_match = songs[:15]
+    songs_to_match = songs[:8]
     if songs_to_match:
         try:
             with ThreadPoolExecutor(max_workers=len(songs_to_match)) as executor:
