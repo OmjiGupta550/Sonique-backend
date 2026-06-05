@@ -225,18 +225,91 @@ def search():
     
     return jsonify({'songs': songs})
 
-# Get streaming URL for a song (supports direct 302 redirect for Next.js audio tag)
-@app.route('/api/stream/<video_id>', methods=['GET'])
-def get_stream(video_id):
+def get_song_title_artist(video_id):
+    try:
+        details = ytmusic.get_song(video_id)
+        video_details = details.get('videoDetails', {})
+        title = video_details.get('title', '')
+        artist = video_details.get('author', '')
+        return title, artist
+    except Exception as e:
+        print(f"Failed to get details for {video_id}: {e}")
+        return None, None
+
+def get_jiosaavn_stream_url(title, artist):
+    query = f"{title} {artist}"
+    url = f"https://saavn.sumit.co/api/search/songs?query={requests.utils.quote(query)}"
+    try:
+        res = requests.get(url, timeout=5)
+        if res.status_code == 200:
+            data = res.json()
+            results = data.get("data", {}).get("results", [])
+            for song in results[:5]:
+                s_title = song.get("name", "")
+                s_artists = song.get("artists", {}).get("primary", [])
+                s_artist_names = [a.get("name", "").lower() for a in s_artists]
+                
+                title_clean = clean_name(title)
+                s_title_clean = clean_name(s_title)
+                
+                title_match = title_clean in s_title_clean or s_title_clean in title_clean
+                artist_match = any(artist.lower() in a or a in artist.lower() for a in s_artist_names) if artist else True
+                
+                if title_match and artist_match:
+                    download_urls = song.get("downloadUrl", [])
+                    if download_urls:
+                        for q in ['320kbps', '160kbps', '96kbps', '48kbps', '12kbps']:
+                            for d in download_urls:
+                                if d.get("quality") == q and d.get("url"):
+                                    return d.get("url")
+                        return download_urls[-1].get("url")
+    except Exception as e:
+        print(f"JioSaavn search failed for stream: {e}")
+    return None
+
+def get_jiosaavn_lyrics(title, artist):
+    query = f"{title} {artist}"
+    url = f"https://saavn.sumit.co/api/search/songs?query={requests.utils.quote(query)}"
+    try:
+        res = requests.get(url, timeout=5)
+        if res.status_code == 200:
+            data = res.json()
+            results = data.get("data", {}).get("results", [])
+            for song in results[:5]:
+                s_title = song.get("name", "")
+                s_artists = song.get("artists", {}).get("primary", [])
+                s_artist_names = [a.get("name", "").lower() for a in s_artists]
+                
+                title_clean = clean_name(title)
+                s_title_clean = clean_name(s_title)
+                
+                title_match = title_clean in s_title_clean or s_title_clean in title_clean
+                artist_match = any(artist.lower() in a or a in artist.lower() for a in s_artist_names) if artist else True
+                
+                if title_match and artist_match:
+                    song_id = song.get("id")
+                    has_lyrics = song.get("hasLyrics")
+                    if has_lyrics or has_lyrics == 'true' or has_lyrics is True:
+                        lyrics_url = f"https://saavn.sumit.co/api/songs/{song_id}/lyrics"
+                        l_res = requests.get(lyrics_url, timeout=5)
+                        if l_res.status_code == 200:
+                            lyrics_data = l_res.json()
+                            l_inner = lyrics_data.get("data", {})
+                            if isinstance(l_inner, dict) and l_inner.get("lyrics"):
+                                return l_inner.get("lyrics")
+                            elif lyrics_data.get("lyrics"):
+                                return lyrics_data.get("lyrics")
+    except Exception as e:
+        print(f"JioSaavn lyrics fetch failed: {e}")
+    return None
+
+def play_from_youtube(video_id):
     ydl_opts = {
         'format': 'bestaudio/best',
         'quiet': True,
         'no_warnings': True,
     }
-    
     stream_url = None
-    
-    # Attempt 1: Try local yt-dlp first
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(f'https://www.youtube.com/watch?v={video_id}', download=False)
@@ -244,32 +317,64 @@ def get_stream(video_id):
     except Exception as e:
         print(f"Local yt-dlp extraction failed for {video_id}: {e}. Trying fallbacks...")
         
-    # Attempt 1.5: Try Cobalt fallback
     if not stream_url:
-        print(f"Attempting Cobalt fallback for {video_id}...")
         stream_url = get_cobalt_fallback(video_id, "audio")
-
-    # Attempt 2: Try Piped fallback
     if not stream_url:
-        print(f"Attempting Piped fallback for {video_id}...")
         stream_url = get_piped_fallback(video_id)
-        
-    # Attempt 3: Try Invidious fallback
     if not stream_url:
-        print(f"Attempting Invidious fallback for {video_id}...")
         stream_url = get_invidious_fallback(video_id)
         
     if stream_url:
-        # If redirect parameter is active, route the browser/audio tag directly to CDN stream
         if request.args.get('redirect', '') == 'true':
             return redirect(stream_url, code=302)
-            
-        return jsonify({
-            'stream_url': stream_url, 
-            'status': 'success'
-        })
+        return jsonify({'stream_url': stream_url, 'status': 'success'})
     else:
         return jsonify({'error': 'Failed to resolve stream URL from all sources'}), 500
+
+# Get streaming URL for a song (supports direct 302 redirect for Next.js audio tag)
+@app.route('/api/stream/<video_id>', methods=['GET'])
+def get_stream(video_id):
+    has_video = request.args.get('has_video', '').lower() == 'true'
+    title = request.args.get('title', '')
+    artist = request.args.get('artist', '')
+    
+    # If not playing video mode, try JioSaavn stream first
+    if not has_video:
+        if not title or not artist:
+            title, artist = get_song_title_artist(video_id)
+        if title:
+            stream_url = get_jiosaavn_stream_url(title, artist)
+            if stream_url:
+                print(f"JioSaavn resolved stream for {title}: {stream_url}")
+                if request.args.get('redirect', '') == 'true':
+                    return redirect(stream_url, code=302)
+                return jsonify({'stream_url': stream_url, 'status': 'success'})
+                
+    # Fallback to YouTube
+    return play_from_youtube(video_id)
+
+# Get lyrics from JioSaavn, with fallback indication to client
+@app.route('/api/lyrics', methods=['GET'])
+def get_lyrics():
+    video_id = request.args.get('videoId', '')
+    title = request.args.get('title', '')
+    artist = request.args.get('artist', '')
+    has_video = request.args.get('has_video', '').lower() == 'true'
+    
+    # If has video, do not query JioSaavn (lyrics will come from YouTube/LRCLIB)
+    if has_video:
+        return jsonify({'lyrics': None, 'source': 'youtube'})
+        
+    if not title or not artist:
+        title, artist = get_song_title_artist(video_id)
+        
+    if title:
+        lyrics = get_jiosaavn_lyrics(title, artist)
+        if lyrics:
+            return jsonify({'lyrics': lyrics, 'source': 'jiosaavn'})
+            
+    return jsonify({'lyrics': None, 'source': 'youtube_fallback'})
+
 
 # Get search suggestions
 @app.route('/api/suggestions', methods=['GET'])
@@ -707,4 +812,3 @@ def get_video_stream(video_id):
 if __name__ == '__main__':
     # Bind to host 0.0.0.0 to support both IPv4 and IPv6 connections on localhost
     app.run(host='0.0.0.0', port=5000, debug=True)
-
