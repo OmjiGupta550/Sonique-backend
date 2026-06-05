@@ -396,61 +396,75 @@ def get_song_details(video_id):
         return jsonify({'error': str(e)}), 500
 
 # Get vibe/related tracks matching a specific video_id
+# Get vibe/related tracks matching a specific video_id
 @app.route('/api/vibe/<video_id>', methods=['GET'])
 def get_vibe_tracks(video_id):
     # Resolve Art Track videoId to matched Official Music Video ID
     video_id = song_to_video_map.get(video_id, video_id)
     video_only = request.args.get('video_only', '').lower() == 'true'
+    title = request.args.get('title', '')
+    artist = request.args.get('artist', '')
+    
+    songs = []
+    seen_ids = {video_id} # exclude seed song
+
     try:
-        # Fetch watch playlist with a high limit to ensure enough video tracks
-        limit = 150 if video_only else 75
-        watch_data = ytmusic.get_watch_playlist(videoId=video_id, limit=limit)
-        tracks_list = watch_data.get('tracks', [])
-        
-        songs = []
-        seen_ids = {video_id} # exclude seed song
-        
-        for track in tracks_list:
-            vid = track.get('videoId')
-            if vid and vid not in seen_ids:
-                has_video = track.get('videoType', '') in ['MUSIC_VIDEO_TYPE_OMV', 'MUSIC_VIDEO_TYPE_UGC']
-                
-                # If video_only is requested, skip tracks that do not have video
-                if video_only and not has_video:
-                    continue
+        # 1. Try to fetch from watch playlist
+        try:
+            limit = 150 if video_only else 75
+            watch_data = ytmusic.get_watch_playlist(videoId=video_id, limit=limit)
+            tracks_list = watch_data.get('tracks', [])
+            
+            for track in tracks_list:
+                vid = track.get('videoId')
+                if vid and vid not in seen_ids:
+                    has_video = track.get('videoType', '') in ['MUSIC_VIDEO_TYPE_OMV', 'MUSIC_VIDEO_TYPE_UGC']
                     
-                seen_ids.add(vid)
-                thumbnail = track.get('thumbnails', [{}])[-1].get('url', '') if track.get('thumbnails') else ''
-                if not thumbnail:
-                    thumbnail = f"https://img.youtube.com/vi/{vid}/0.jpg"
-                
-                duration_secs = track.get('duration_seconds') or 180
-                artists_list = track.get('artists', [])
-                artist_name = ', '.join([a['name'] for a in artists_list if 'name' in a]) if artists_list else 'Unknown Artist'
-                
-                songs.append({
-                    'id': vid,
-                    'title': track.get('title', 'Unknown Title'),
-                    'artist': artist_name,
-                    'coverUrl': thumbnail,
-                    'duration': duration_secs,
-                    'sourceUrl': f"{request.host_url}api/stream/{vid}?redirect=true",
-                    'hasVideo': has_video
-                })
-                
-        # If we didn't get enough tracks, fetch fallback tracks
+                    if video_only and not has_video:
+                        continue
+                        
+                    seen_ids.add(vid)
+                    thumbnail = track.get('thumbnails', [{}])[-1].get('url', '') if track.get('thumbnails') else ''
+                    if not thumbnail:
+                        thumbnail = f"https://img.youtube.com/vi/{vid}/0.jpg"
+                    
+                    duration_secs = track.get('duration_seconds') or 180
+                    artists_list = track.get('artists', [])
+                    artist_name = ', '.join([a['name'] for a in artists_list if 'name' in a]) if artists_list else 'Unknown Artist'
+                    
+                    songs.append({
+                        'id': vid,
+                        'title': track.get('title', 'Unknown Title'),
+                        'artist': artist_name,
+                        'coverUrl': thumbnail,
+                        'duration': duration_secs,
+                        'sourceUrl': f"{request.host_url}api/stream/{vid}?redirect=true",
+                        'hasVideo': has_video
+                    })
+        except Exception as e_watch:
+            print(f"Watch playlist extraction failed (KeyError/endpoint likely): {e_watch}. Trying search fallback directly...")
+
+        # 2. If watch playlist failed or returned too few tracks, fallback to related search query
         if len(songs) < 50:
             try:
-                song_details = ytmusic.get_song(video_id)
-                video_details = song_details.get('videoDetails', {})
-                title = video_details.get('title', '')
-                author = video_details.get('author', '')
+                # If title/author not passed in query, try fetching it via get_song
+                if not title:
+                    try:
+                        song_details = ytmusic.get_song(video_id)
+                        video_details = song_details.get('videoDetails', {})
+                        title = video_details.get('title', '')
+                        if not artist:
+                            artist = video_details.get('author', '')
+                    except Exception as e_details:
+                        print(f"Failed to fetch song details for fallback search: {e_details}")
+                
                 if title:
-                    search_query = f"{title} {author} related"
+                    search_query = f"{title} {artist} related".strip()
                     if video_only:
                         search_query += " official music video"
                     
                     filter_type = 'videos' if video_only else 'songs'
+                    print(f"Running fallback vibe search query: {search_query}")
                     search_res = ytmusic.search(search_query, filter=filter_type, limit=80)
                     for track in search_res:
                         vid = track.get('videoId')
@@ -477,7 +491,7 @@ def get_vibe_tracks(video_id):
                             
                             songs.append({
                                 'id': vid,
-                                'title': track.get('title', 'Unknown Title'),
+                                	'title': track.get('title', 'Unknown Title'),
                                 'artist': artist_name,
                                 'coverUrl': thumbnail,
                                 'duration': duration_secs,
