@@ -168,27 +168,30 @@ def search():
         return jsonify({'error': 'Query required'}), 400
     
     search_limit = int(request.args.get('limit', 50))
-    attempts = 0
-    results = None
-    last_error = None
-    while attempts < 3:
+    
+    # Run parallel queries for songs and videos
+    songs_results = []
+    videos_results = []
+    
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        songs_future = executor.submit(ytmusic.search, query, filter='songs', limit=search_limit)
+        videos_future = executor.submit(ytmusic.search, query, filter='videos', limit=search_limit)
+        
         try:
-            results = ytmusic.search(query, filter='songs', limit=search_limit)
-            break
+            songs_results = songs_future.result()
         except Exception as e:
-            last_error = e
-            attempts += 1
-            time.sleep(0.5)
-
-    if results is None:
-        return jsonify({'error': f'Failed to fetch search results: {str(last_error)}'}), 500
+            print(f"Failed to fetch songs search: {e}")
+            
+        try:
+            videos_results = videos_future.result()
+        except Exception as e:
+            print(f"Failed to fetch videos search: {e}")
 
     songs = []
-    for result in results:
+    for result in songs_results:
         if 'videoId' in result:
-            # Parse duration string (e.g. "3:45") to seconds integer for standard player integration
             duration_str = result.get('duration', '')
-            duration_secs = 180  # Default fallback
+            duration_secs = 180
             if duration_str:
                 try:
                     parts = list(map(int, duration_str.split(':')))
@@ -202,15 +205,15 @@ def search():
             songs.append({
                 'id': result['videoId'],
                 'title': result.get('title', ''),
-                'artist': ', '.join([a['name'] for a in result.get('artists', [])]),
+                'artist': ', '.join([a['name'] for a in result.get('artists', []) if 'name' in a]),
                 'album': result.get('album', {}).get('name', '') if result.get('album') else '',
                 'duration': duration_secs,
                 'thumbnail': result.get('thumbnails', [{}])[-1].get('url', ''),
                 'videoId': result['videoId'],
-                'hasVideo': False  # Checked in parallel match below
+                'hasVideo': False
             })
             
-    # Run parallel video matching for the top 15 results to keep performance fast
+    # Run parallel video matching for the top results to find official video matches
     songs_to_match = songs[:8]
     if songs_to_match:
         try:
@@ -220,10 +223,50 @@ def search():
             for i, matched_id in enumerate(matched_ids):
                 if matched_id:
                     songs[i]['hasVideo'] = True
+                    songs[i]['id'] = matched_id
+                    songs[i]['videoId'] = matched_id
         except Exception as pe:
             print(f"Parallel matching failed: {pe}")
-    
-    return jsonify({'songs': songs})
+
+    videos = []
+    for result in videos_results:
+        if 'videoId' in result:
+            duration_str = result.get('duration', '')
+            duration_secs = 180
+            if duration_str:
+                try:
+                    parts = list(map(int, duration_str.split(':')))
+                    if len(parts) == 2:
+                        duration_secs = parts[0] * 60 + parts[1]
+                    elif len(parts) == 3:
+                        duration_secs = parts[0] * 3600 + parts[1] * 60 + parts[2]
+                except ValueError:
+                    pass
+
+            videos.append({
+                'id': result['videoId'],
+                'title': result.get('title', ''),
+                'artist': ', '.join([a['name'] for a in result.get('artists', []) if 'name' in a]),
+                'album': 'Official Music Video',
+                'duration': duration_secs,
+                'thumbnail': result.get('thumbnails', [{}])[-1].get('url', ''),
+                'videoId': result['videoId'],
+                'hasVideo': True
+            })
+
+    # Merge and deduplicate by videoId
+    combined = []
+    seen_ids = set()
+    for s in songs:
+        if s['id'] not in seen_ids:
+            combined.append(s)
+            seen_ids.add(s['id'])
+    for v in videos:
+        if v['id'] not in seen_ids:
+            combined.append(v)
+            seen_ids.add(v['id'])
+
+    return jsonify({'songs': combined})
 
 def get_song_title_artist(video_id):
     try:
